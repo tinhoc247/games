@@ -45,6 +45,8 @@ h1{margin:0 0 18px;font:800 36px/1.15 var(--f-h);background:linear-gradient(90de
 .ego:disabled{opacity:.75;cursor:wait}
 .ego b{transition:transform .2s}.ego:hover b{transform:translateX(6px)}
 .ego:disabled b{display:inline-block;animation:spin .8s linear infinite}
+.adm{display:table;margin:18px auto 0;padding:8px 18px;border-radius:99px;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.55);color:#fff;font:700 15px/1.2 var(--f-b);text-decoration:none;backdrop-filter:blur(6px);transition:.18s}
+.adm:hover{background:#fff;color:var(--violet-d);transform:translateY(-2px)}
 :focus-visible{outline:3px solid var(--sky);outline-offset:3px}
 @media(max-width:480px){.ecard{padding:58px 18px 22px}h1{font-size:31px}#code{font-size:25px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
@@ -63,7 +65,8 @@ h1{margin:0 0 18px;font:800 36px/1.15 var(--f-h);background:linear-gradient(90de
     </label>
     <p id="msg" role="status" aria-live="polite"></p>
     <button class="ego" id="go" type="button">Vào chơi thôi <b>➜</b></button>
-  </main></div>
+  </main>
+  <a class="adm" href="admin.html">🔑 Đăng nhập</a></div>
 </div>
 
 <script src="hub.js"></script>
