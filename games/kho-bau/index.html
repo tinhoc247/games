@@ -345,7 +345,7 @@ function build0(type){const ms=pickMap();P=[];const tot=M,sts=['arc','zig','snak
    if(c<bc){bc=c;best=L}if(!c)break}
   if(!best)best=resample([{x:s.x,y:s.y},{x:G.x,y:G.y}],120);
   const nd=Math.min(Math.round(tot*2/3),Math.max(0,tot-1)),dp=new Set();
-  while(dp.size<nd)dp.add(2+(Math.random()*(tot-1)|0));
+  if(OFFL()){/* offline: chướng ngại = 1/2 số trạm (làm tròn xuống), không đứng liền nhau; trạm 1 luôn là câu hỏi thường */const nn=Math.max(0,tot-1),k=Math.min(Math.floor(tot/2),Math.ceil(nn/2)),c=shuffle(Array.from({length:nn-k+1},(_,x)=>x)).slice(0,k).sort((a,b)=>a-b);c.forEach((v,i)=>dp.add(v+i+2))}else while(dp.size<nd)dp.add(2+(Math.random()*(tot-1)|0));
   const nodes=[{x:s.x,y:s.y,t:'start',sea:false}];
   for(let j=1;j<=tot;j++){const q=nodeAt(best,j/(tot+1)),sea=false,dz=DZ,dc=DC,d=dz[Math.random()*dz.length|0],isD=dp.has(j);
    nodes.push({...q,t:isD?'danger':'q',sea,d,dc:isD&&Math.random()<.6?d[0]:dc[Math.random()*dc.length|0]})}
@@ -450,7 +450,7 @@ function step(cb){const t=T[cur],n=P[t.path].nodes[t.pos+1];
  if(t.shield>0){t.shield--;XD=true;t.pos++;render();log(`🛡️ ${W(t)} vượt ${n.d[1]}`);return info(`<div class="big">🛡️</div><h3>Bạn dùng năng lực vượt qua ${n.d[1]}!</h3>`,()=>step(cb))}
  ask(ok=>{if(ok){XD=true;t.pos++;render();const iu=IU;IU=null;log(iu?`${iu[0]} ${t.name} dùng ${iu[1]} vượt ${n.d[1]}`:`💪 ${t.name} vượt qua ${n.d[1]}`);info(iu?`<div class="big">${iu[0]}</div><h3>Dùng ${iu[1]} để vượt ${n.d[1]}!</h3>`:`<div class="big">💪</div><h3>Vượt qua ${n.d[1]} thành công!</h3>`,()=>step(cb))}
   else{log(`${n.d[0]} ${W(t)} không vượt được, đứng yên`);cb('stay')}},pre,n.d[2].filter(k=>t.inv[k]>0),n)}
-function mainRes(ok){const t=T[cur];XD=false;if(ok)t.gold+=50;
+function mainRes(ok){const t=T[cur];XD=false;if(ok&&!RTRY)t.gold+=50;
  if(!ok){log(`❌ ${W(t)} trả lời sai, mất lượt`);return info(`<div class="big">😢</div><h3>Sai rồi! Bạn mất lượt</h3>`,nextTurn)}
  step(r=>{if(r=='win')return win();
   if(r=='stay')return info(`<div class="big">🧱</div><h3>Bạn chưa vượt được nguy hiểm, đứng yên tại chỗ</h3>`,nextTurn);
@@ -461,7 +461,15 @@ function mainRes(ok){const t=T[cur];XD=false;if(ok)t.gold+=50;
 const CHEST_H=()=>`<h3>🎉 Chính xác! Chọn 1 rương kho báu</h3><div class="mirrors">${[0,1,2].map(()=>`<button class="mirror" onclick="openChest(this)">${CHC}</button>`).join('')}</div>`;
 function chestQ(){log(`🚧 ${W(T[cur])} vượt chướng ngại, trả lời thêm 1 câu để mở rương`);info(`<div class="big">🚧</div><h3>Bạn đã vượt chướng ngại vật!</h3><p>Trả lời đúng câu hỏi tại trạm này để mở rương.</p>`,askChest)}
 function askChest(){ask(ok=>{if(ok){log(`✅ ${W(T[cur])} trả lời đúng, mở rương!`);modal(CHEST_H())}else info(`<div class="big">🔁</div><h3>Chưa đúng! Hãy trả lời lại để mở rương.</h3>`,askChest)})}
-function ask(cb,pre,use,dn){showQ(pickQ(),cb,pre,use,dn)}
+/* Offline (bài tập về nhà): trả lời sai phải làm lại ĐÚNG câu đó (đáp án xáo lại) cho đến khi đúng mới đi tiếp.
+   Lần sai đầu tiên vẫn tính vào báo cáo; các lần làm lại không tính và không được +50 vàng. */
+var RTRY=false;
+function OFFL(){try{return !!(SES&&SES.mode=='offline')}catch(e){return false}}
+function ask(cb,pre,use,dn){RTRY=false;
+ if(!OFFL())return showQ(pickQ(),cb,pre,use,dn);
+ const q=pickQ(),again=()=>{const done=o=>{if(o){RTRY=true;cb(true)}else redo()};showQ(shOpt(q),done,pre,use,dn);CB=done},
+  redo=()=>info('<div class="big">🔁</div><h3>Chưa đúng! Hãy trả lời lại câu này.</h3>',again);
+ showQ(q,o=>{if(o)cb(true);else redo()},pre,use,dn)}
 function showQ(q,cb,pre,use,dn){DQ=dn?{q,cb,pre,dn}:null;RCB=cb;IU=null;CB=o=>{ST[o?'ok':'bad']++;H.push({q,o,w:T[cur].name});window.SYNC&&SYNC(q,o);cb(o)};const ty=q.ty||'single';CQ=q;q.sel=-1;q.locked=false;q.pp=null;
  const ps=q.imgPos,im=q.img&&ty!='pt'?imgH(q.img):'',qt=`<h3>${esc(q.q||'')}</h3>`;
  let h=`${pre||''}${dn?useBar(use||[],dn):''}`+(ps=='left'||ps=='right'?`<div style="display:flex;gap:10px;align-items:center;flex-direction:${ps=='left'?'row':'row-reverse'}"><div style="flex:0 0 42%">${im}</div><div style="flex:1">${qt}</div></div>`:qt+im);
