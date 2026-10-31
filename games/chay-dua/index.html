@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head><script src="../../quota.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chạy đua</title>
+<link rel="stylesheet" href="qbase.css">
+<link rel="stylesheet" href="race.css">
+</head>
+<body>
+<div class="scene" aria-hidden="true">
+  <div class="sun"></div><i class="cl c1">☁️</i><i class="cl c2">☁️</i><i class="cl c3">☁️</i>
+  <div class="hill h1"></div><div class="hill h2"></div>
+  <span class="tree" style="left:6%">🌳</span><span class="tree" style="left:22%;font-size:30px">🌲</span><span class="tree" style="right:9%">🌳</span><span class="tree" style="right:27%;font-size:32px">🌴</span>
+  <div class="flags"></div><div class="stand"></div>
+  <div class="crowd" id="crowd"></div><div class="road"></div>
+</div>
+
+<div id="hud"></div>
+<div id="app"></div>
+<div id="modal"><div class="box" id="mbox"></div></div>
+<div id="toast"></div>
+<div class="ov" id="ovP"><div class="pop" id="ovPb"></div></div>
+<div class="ov" id="ovF"><div class="pop"><div class="big">🧊</div><h3>Bạn bị đóng băng!</h3><p id="ovFw"></p><div class="cnt" id="ovFc">3</div></div></div>
+<div class="ov" id="ovC"><div class="cnt" id="ovCn">3</div></div>
+<div class="tools"><button id="bSnd" title="Bật/tắt âm thanh" aria-label="Âm thanh">🔊</button><button id="bFs" title="Toàn màn hình" aria-label="Toàn màn hình">⛶</button></div>
+
+<script src="race.js"></script>
+<script src="race-q.js"></script>
+<script>
+(function () {
+  'use strict';
+  document.getElementById('crowd').innerHTML = Array.from({ length: 60 }, (_, i) => '<span>' + ['🙌', '🧑‍🎓', '📣', '👏', '🎉', '🧒', '🙋'][i % 7] + '</span>').join('');
+
+  /* ---------- Trạng thái ---------- */
+  const q = new URLSearchParams(location.search);
+  let CODE = String(q.get('code') || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+  let S = null, PL = {}, NQ = 0, RAW = [], VALID = [], ORD = [], qn = 0;
+  let pos = 0, okN = 0, badN = 0, wq = 0, fin = 0, LG = [];
+  let frozenUntil = 0, FZ = {}, seen = new Set(), lastKey = '', TI = null, started = false, ENDED = false, power = false, joinAv = '', counting = false, hudOn = false;
+  const LS = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (_) { return null; } };
+  const app = $('#app');
+
+  function toast(t, good) {
+    const d = document.createElement('div'); if (good) d.className = 'good'; d.textContent = t; $('#toast').appendChild(d);
+    setTimeout(() => d.remove(), 4200);
+  }
+  function setHH() { const h = $('#hud'), v = (hudOn ? h.offsetHeight : 0) + 'px'; document.documentElement.style.setProperty('--hh', v); app.style.paddingTop = v; }
+  window.addEventListener('resize', setHH);
+  $('#bSnd').textContent = Snd.mute ? '🔇' : '🔊';
+  $('#bSnd').onclick = () => { $('#bSnd').textContent = Snd.toggle() ? '🔇' : '🔊'; };
+  $('#bFs').onclick = () => { const d = document, e = d.documentElement; if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d); else (e.requestFullscreen || e.webkitRequestFullscreen || (() => {})).call(e); };
+
+  /* ---------- Màn hình vào phòng ---------- */
+  function showEntry(msg) {
+    app.innerHTML = `<div class="entry"><main class="ecard"><div class="ebadge">🏁</div>
+      <h2>Chạy đua</h2><p class="hint">Mã phòng: <b>${esc(CODE)}</b></p>
+      <input class="fld" id="jN" maxlength="20" placeholder="Nhập tên của em" autocomplete="off">
+      <p class="hint" style="margin-top:6px">Chọn nhân vật đua của em</p><div id="avs"></div>
+      <div class="err" id="jE">${esc(msg || '')}</div>
+      <button class="ego" id="jB">Vào đường đua ➜</button></main></div>`;
+    drawAv();
+    $('#jB').onclick = join;
+    $('#jN').addEventListener('keydown', e => { if (e.key === 'Enter') join(); });
+    $('#jN').focus();
+  }
+  function taken() { return new Set(Object.values(PL).map(v => v && v.av)); }
+  function drawAv() {
+    const t = taken(); if (!joinAv || t.has(joinAv)) joinAv = AVS.filter(a => !t.has(a))[Math.random() * Math.max(1, AVS.filter(a => !t.has(a)).length) | 0] || AVS[0];
+    $('#avs').innerHTML = AVS.map(a => `<button type="button" class="avb${a === joinAv ? ' on' : ''}" data-a="${a}"${t.has(a) ? ' disabled' : ''}>${a}</button>`).join('');
+    $('#avs').onclick = e => { const b = e.target.closest('.avb'); if (b && !b.disabled) { joinAv = b.dataset.a; drawAv(); } };
+  }
+  async function join() {
+    const name = $('#jN').value.trim(); const er = t => $('#jE').textContent = t;
+    if (!name) return er('Nhập tên của em nhé.');
+    $('#jB').disabled = true; er('Đang vào…'); Snd.unlock();
+    try {
+      S = await fb(G('sessions/' + CODE));
+      if (!S) throw Error('Phòng không còn tồn tại.');
+      if (S.status === 'ended') throw Error('Cuộc đua này đã kết thúc.');
+      PL = (await fb(G('players/' + CODE))) || {};
+      if (taken().has(joinAv)) { drawAv(); }
+      await fb(G('players/' + CODE + '/' + ME), 'PUT', { name, av: joinAv, pos: 0, ok: 0, bad: 0, wq: 0, qn: 0, joined: Date.now() });
+      LS('raceGame', { code: CODE, id: ME, rt: RT, name, av: joinAv });
+      await enter(true);
+    } catch (e) { $('#jB').disabled = false; er(e.message); }
+  }
+
+  /* ---------- Vào phòng (mới hoặc vào lại) ---------- */
+  async function enter(fresh) {
+    S = (await fb(G('sessions/' + CODE))) || S; NQ = +S.nq || 1; power = S.powers !== false;
+    const raw = await fb(G('quiz/' + CODE)); await preImgs(raw);
+    RAW = JSON.parse(raw || '[]'); VALID = RAW.map((x, i) => norm(x) ? i : -1).filter(i => i >= 0);
+    if (!VALID.length) throw Error('Phòng chưa có câu hỏi hợp lệ.');
+    ORD = shuffle(VALID);
+    const me = (await fb(G('players/' + CODE + '/' + ME))) || {};
+    if (!fresh) { pos = me.pos | 0; okN = me.ok | 0; badN = me.bad | 0; wq = me.wq | 0; qn = me.qn | 0; fin = me.fin | 0; LG = (await fb(G('logs/' + CODE + '/' + ME))) || []; }
+    else { pos = okN = badN = wq = qn = fin = 0; LG = []; }
+    /* bỏ qua các sự kiện cũ (khi vào lại) */
+    const ev = await fbEvents(CODE, ''); seen = new Set(Object.keys(ev)); lastKey = Object.keys(ev).sort().pop() || '';
+    window.SYNC = null;
+    started = S.status === 'running'; ENDED = S.status === 'ended' || Object.values(PL).some(v => v && v.fin > 0);
+    $('#hud').style.display = 'block'; hudOn = true;
+    await tick();
+    clearInterval(TI); TI = setInterval(tick, 1500);
+    route();
+  }
+
+  /* ---------- Vòng cập nhật ---------- */
+  let ticking = false;
+  async function tick() {
+    if (ticking) return;
+    if (document.hidden && Date.now() - (window.LTK || 0) < 15000) return;
+    window.LTK = Date.now(); ticking = true;
+    try {
+      /* sự kiện năng lực: hỏi mỗi lượt (rất nhẹ); danh sách người chơi nặng nhất: thưa dần theo sĩ số */
+      const needP = !window.PLR || Date.now() - (window.LPL || 0) > (S && S.status === 'running' ? Math.min(6000, Math.max(3000, Object.keys(window.PLR || {}).length * 120)) : 4000);
+      const [s, p0, ev] = await Promise.all([fb(G('sessions/' + CODE)), needP ? fb(G('players/' + CODE)) : null, fbEvents(CODE, lastKey)]);
+      if (p0) { window.PLR = p0; window.LPL = Date.now(); }
+      const p = p0 || window.PLR;
+      if (!s) { ticking = false; return gone('Phòng đã bị xoá.'); }
+      S = s; PL = p || {};
+      if (!PL[ME]) { ticking = false; return gone('Em đã được mời ra khỏi phòng.'); }
+      Object.keys(ev).sort().forEach(k => { if (seen.has(k)) return; seen.add(k); lastKey = k; onEvent(ev[k]); });
+      const prevStart = started, prevEnd = ENDED; started = S.status === 'running' || S.status === 'ended'; ENDED = S.status === 'ended' || Object.values(PL).some(v => v && v.fin > 0);
+      if (!prevStart && S.status === 'running') countdown();
+      if (ENDED && !prevEnd) { close_(); $('#ovP').style.display = 'none'; $('#ovF').style.display = 'none'; $('#ovC').style.display = 'none'; counting = false; drawSummary(true); }
+      drawHud();
+      if (ENDED || fin) drawSummary(); else if (!started) drawWait();
+    } catch (e) { /* mạng chập chờn: thử lại ở lượt sau */ }
+    ticking = false;
+  }
+  function gone(m) {
+    clearInterval(TI); LS('raceGame', null); close_(); $('#hud').style.display = 'none'; hudOn = false; setHH();
+    app.innerHTML = `<div class="entry"><main class="ecard"><div class="ebadge">🚧</div><h2>${esc(m)}</h2><button class="ego" onclick="location.href='../../index.html'">Về trang nhập mã</button></main></div>`;
+  }
+
+  /* ---------- Điều hướng màn hình theo trạng thái ---------- */
+  function route() {
+    if (ENDED || fin) return finishView();
+    if (!started) return drawWait();
+    if (!counting) nextQ();
+  }
+  function drawWait() {
+    if (started || fin) return;
+    const L = rankPlayers(PL);
+    if (!$('#wait')) { app.innerHTML = '<div class="entry"><main class="ecard wide" id="wait"></main></div>'; close_(); }
+    $('#wait').innerHTML = `<div class="ebadge">⏳</div><h2>Đang chờ xuất phát…</h2>
+      <p class="hint">Đường đua dài <b>${NQ}</b> bước. Thầy/cô bấm <b>Bắt đầu</b> là cả lớp chạy cùng lúc!</p>
+      <div class="plist">${L.map(r => `<span class="pc${r.id === ME ? ' me' : ''}">${avOf(r.av)} ${esc(r.name)}</span>`).join('')}</div>
+      <p class="hint">${L.length} người đã vào phòng</p>`;
+  }
+
+  /* ---------- Đếm ngược xuất phát ---------- */
+  function countdown() {
+    if (counting) return; counting = true; close_(); app.innerHTML = '';
+    const ov = $('#ovC'), n = $('#ovCn'); ov.style.display = 'flex'; Snd.start();
+    let k = 3; n.textContent = k;
+    const t = setInterval(() => {
+      k--; if (k > 0) { n.textContent = k; n.style.animation = 'none'; void n.offsetWidth; n.style.animation = ''; }
+      else if (k === 0) { n.textContent = 'GO!'; n.style.animation = 'none'; void n.offsetWidth; n.style.animation = ''; }
+      else { clearInterval(t); ov.style.display = 'none'; counting = false; if (!ENDED && !fin) nextQ(); }
+    }, 900);
+  }
+
+  /* ---------- Hỏi đáp ---------- */
+  function nextQ() {
+    if (ENDED || fin) return finishView();
+    app.innerHTML = '';
+    askQ(ORD[qn % ORD.length], false);
+  }
+  function askQ(i, retry) {
+    const nq = norm(RAW[i]); if (!nq) { qn++; return nextQ(); }
+    nq.idx = i;
+    const pre = retry ? '<div class="retry">↩️ Chưa đúng rồi. Em trả lời lại câu này nhé (câu làm lại không tính là câu đúng).</div>' : '';
+    showQ(nq, ok => onAns(i, ok, retry), pre);
+  }
+  function save(extra) {
+    fb(G('players/' + CODE + '/' + ME), 'PATCH', Object.assign({ pos, ok: okN, bad: badN, wq, qn }, extra || {})).catch(() => {});
+  }
+  function saveLog() { fb(G('logs/' + CODE + '/' + ME), 'PUT', LG).catch(() => {}); }
+  function onAns(i, ok, retry) {
+    if (ENDED) return finishView();
+    if (!ok) {                                   /* sai: ghi nhận, phải trả lời lại */
+      badN++; if (!retry) wq++; LG.push({ i, o: false }); saveLog(); save(); Snd.bad();
+      return askQ(i, true);
+    }
+    LG.push({ i, o: true, r: retry ? 1 : 0 }); saveLog();
+    if (!retry) okN++;                           /* câu làm lại không tính vào câu đúng */
+    qn++; pos = Math.min(NQ, pos + 1);
+    Snd.step();
+    if (pos >= NQ) return win();
+    save(); drawHud();
+    if (!retry && power && okN > 0 && okN % 3 === 0) return givePower();
+    nextQ();
+  }
+
+  /* ---------- Năng lực ---------- */
+  function givePower() {
+    close_();
+    const others = () => rankPlayers(PL).filter(r => r.id !== ME && !(r.fin > 0));
+    let kind = ['step', 'back', 'freeze'][Math.random() * 3 | 0];
+    if (POWERS[kind].need && !others().length) kind = 'step';
+    const ov = $('#ovP'), b = $('#ovPb'); ov.style.display = 'flex'; Snd.power();
+    const icons = ['🚀', '⏪', '🧊'], t0 = Date.now(); let k = 0;
+    b.innerHTML = `<h3>🎁 Năng lực đặc biệt!</h3><p>Em đã trả lời đúng ${okN} câu. Đang bốc năng lực…</p><div class="reel" id="reel">🎁</div>`;
+    const iv = setInterval(() => { const r = $('#reel'); if (r) r.textContent = icons[k++ % 3]; if (Date.now() - t0 > 1300) { clearInterval(iv); reveal(kind); } }, 110);
+    function reveal(kd) {
+      const P = POWERS[kd];
+      if (!P.need) {
+        b.innerHTML = `<div class="big">${P.icon}</div><h3>${P.name}</h3><p>${P.desc}</p><button class="ego gr" id="pOk">Dùng ngay!</button>`;
+        $('#pOk').onclick = () => useStep();
+        return;
+      }
+      const L = others();
+      b.innerHTML = `<div class="big">${P.icon}</div><h3>${P.name}</h3><p>${P.desc}</p>${L.map(r => `<button class="tg2" data-id="${r.id}"><span style="font-size:28px">${avOf(r.av)}</span>${esc(r.name)}<small>${r.pos | 0}/${NQ}</small></button>`).join('')}
+        <button class="alt" id="pSk" style="margin-top:6px">Bỏ qua</button>`;
+      b.onclick = e => {
+        const x = e.target.closest('.tg2'); if (x) return useOn(kd, x.dataset.id);
+        if (e.target.id === 'pSk') { b.onclick = null; end(); }
+      };
+    }
+    function end() { ov.style.display = 'none'; if (!ENDED && !fin) nextQ(); }
+    function useStep() {
+      pos = Math.min(NQ, pos + 1); fb(G('events/' + CODE), 'POST', { type: 'step', from: ME, fn: PL[ME] ? PL[ME].name : '', fa: PL[ME] ? PL[ME].av : '', t: { '.sv': 'timestamp' } }).catch(() => {});
+      Snd.step(); ov.style.display = 'none'; save(); drawHud();
+      if (pos >= NQ) return win(); nextQ();
+    }
+    function useOn(kd, id) {
+      b.onclick = null; const tg = PL[id];
+      fb(G('events/' + CODE), 'POST', { type: kd, from: ME, fn: PL[ME].name, fa: PL[ME].av, to: id, tn: tg ? tg.name : '', ta: tg ? tg.av : '', t: { '.sv': 'timestamp' } }).catch(() => {});
+      toast((kd === 'back' ? '⏪ Em đã kéo lùi ' : '🧊 Em đã đóng băng ') + (tg ? tg.name : 'đối thủ') + '!', true);
+      end();
+    }
+  }
+  function onEvent(e) {
+    if (!e) return;
+    if (e.type === 'freeze' && e.to) { FZ[e.to] = true; setTimeout(() => { delete FZ[e.to]; drawHud(); }, FREEZE_MS); }
+    if (e.to !== ME) return;
+    if (e.type === 'back') {
+      pos = Math.max(0, pos - 1); save(); Snd.back(); toast('⏪ ' + (e.fn || 'Một bạn') + ' đã kéo lùi em 1 bước!');
+    } else if (e.type === 'freeze') {
+      Snd.freeze(); toast('🧊 ' + (e.fn || 'Một bạn') + ' đã đóng băng em 3 giây!'); freeze(e.fn);
+    }
+  }
+  function freeze(by) {
+    if (fin || ENDED) return;
+    const ov = $('#ovF'), c = $('#ovFc'); frozenUntil = Date.now() + FREEZE_MS; $('#ovFw').textContent = (by || 'Một bạn') + ' đã đóng băng em!';
+    ov.style.display = 'flex'; clearInterval(freeze.t);
+    freeze.t = setInterval(() => {
+      const l = Math.ceil((frozenUntil - Date.now()) / 1000); c.textContent = Math.max(0, l);
+      if (l <= 0) { clearInterval(freeze.t); ov.style.display = 'none'; }
+    }, 100);
+    c.textContent = 3;
+  }
+
+  /* ---------- Thanh tiến độ phía trên ---------- */
+  function drawHud() {
+    if (!hudOn) return;
+    const me = PL[ME] || {}; const nextP = power ? (Math.floor(okN / 3) + 1) * 3 : null;
+    $('#hud').innerHTML = `<div class="hr"><span>${avOf(me.av)} ${esc(me.name || '')}</span><span class="pill">🏁 ${pos}/${NQ} bước</span><span class="pill">✅ ${okN} đúng</span><span class="sp"></span>${nextP ? `<span class="pill">🎁 Năng lực ở câu đúng thứ ${nextP}</span>` : ''}</div>${trackHtml(Object.assign({}, PL, { [ME]: Object.assign({}, PL[ME] || {}, { pos, fin: fin > 0 ? fin : 0 }) }), NQ, ME, FZ)}`;
+    setHH();
+  }
+
+  /* ---------- Về đích & tóm tắt ---------- */
+  function win() {
+    fin = Date.now(); ENDED = true; save({ fin: { '.sv': 'timestamp' } }); Snd.win();
+    close_(); $('#ovP').style.display = 'none'; finishView();
+  }
+  function finishView() { close_(); drawSummary(true); }
+  let sumKey = '', LGall = {}, LGat = 0;
+  async function drawSummary(force) {
+    if (!$('#sumw') || force) { app.innerHTML = '<div class="sum" id="sumw"></div>'; sumKey = ''; }
+    let QS = RAW;
+    if (Date.now() - LGat > 10000) { LGat = Date.now(); try { LGall = (await fb(G('logs/' + CODE))) || {}; } catch (_) {} }
+    const P = Object.assign({}, PL, { [ME]: Object.assign({}, PL[ME] || {}, { pos, ok: okN, wq, bad: badN }) });
+    if (!(P[ME].fin > 0) && fin > 0) P[ME].fin = fin;
+    const L = rankPlayers(P), rk = L.findIndex(r => r.id === ME) + 1, mine = P[ME] || {};
+    const done = ENDED || L.some(r => r.fin > 0);
+    const html = `<div class="card"><h2>${done ? '🏁 Cuộc đua kết thúc!' : (mine.fin > 0 ? '🎉 Em đã về đích!' : '🏁 Cuộc đua')}</h2>
+      <div class="mine"><span class="pill2">Hạng hiện tại: ${rk <= 3 ? ['🥇', '🥈', '🥉'][rk - 1] : '#' + rk}</span><span class="pill2">✅ ${okN} câu đúng</span><span class="pill2">🎯 ${acc(mine)}% chính xác</span></div>
+      ${done ? '' : '<p class="hint" style="text-align:center">Đang chờ các bạn khác về đích… Bảng xếp hạng tự cập nhật.</p>'}
+      ${sumHtml(P, LGall, QS, NQ, ME)}</div>`;
+    if (html !== sumKey) { sumKey = html; const w = $('#sumw'); if (w) w.innerHTML = html; }
+    if (done && !drawSummary.ended) { drawSummary.ended = true; clearInterval(TI); }
+  }
+
+  /* ---------- Khởi động ---------- */
+  (async function boot() {
+    if (!CODE) return location.replace('../../index.html');
+    app.innerHTML = '<div class="entry"><main class="ecard"><div class="ebadge">🏁</div><h2>Đang vào phòng…</h2></main></div>';
+    try {
+      const sv = LS('raceGame');
+      if (sv && sv.code === CODE && sv.rt) {                       /* vào lại sau khi tải lại trang */
+        RT = sv.rt; ME = sv.id; await fbRefresh(); if (ME !== sv.id) ME = sv.id;
+        const [s, me] = await Promise.all([fb(G('sessions/' + CODE)), fb(G('players/' + CODE + '/' + ME))]);
+        if (s && me && me.name) { S = s; await enter(false); return; }
+      }
+      await fbAuth();
+      S = await fb(G('sessions/' + CODE));
+      if (!S) return location.replace('../../index.html?code=' + CODE + '&re=1');
+      if (S.status === 'ended') return gone('Cuộc đua này đã kết thúc.');
+      PL = (await fb(G('players/' + CODE))) || {};
+      showEntry();
+    } catch (e) { showEntry(e.message); }
+  })();
+})();
+</script>
+</body>
+</html>

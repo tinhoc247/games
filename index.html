@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head><script src="quota.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vào game 🎮</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1E1B4B;--mut:#6B6A8A;--bad:#E5384F;--violet:#6C4DF6;--violet-d:#4B32C9;--coral:#FF5E7E;--sun:#FFC233;--mint:#12C99B;--sky:#2FB5FF;
+ --f-h:'Baloo 2','Be Vietnam Pro',system-ui,sans-serif;--f-b:'Be Vietnam Pro',system-ui,'Segoe UI',Arial,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--f-b);color:var(--ink);background:linear-gradient(130deg,#6C4DF6,#B04CF0 35%,#FF5E7E 70%,#FFA24C) fixed;background-size:220% 220%;animation:bgmove 16s ease infinite;overflow-x:hidden}
+@keyframes bgmove{50%{background-position:100% 100%}}
+.entry{position:relative;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:16px;padding-top:max(16px,env(safe-area-inset-top));padding-bottom:40px}
+.fl{position:fixed;font-style:normal;font-size:38px;opacity:.7;animation:eflt 6s ease-in-out infinite;pointer-events:none;user-select:none;filter:drop-shadow(0 6px 8px rgba(0,0,0,.22));z-index:0}
+.f1{top:7%;left:8%}.f2{top:13%;right:9%;animation-delay:-2s}.f3{top:46%;left:4%;animation-delay:-4s;font-size:30px}
+.f4{bottom:11%;right:7%;animation-delay:-1s}.f5{bottom:9%;left:11%;animation-delay:-3s;font-size:32px}.f6{top:38%;right:4%;animation-delay:-5s;font-size:28px}
+@keyframes eflt{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-20px) rotate(8deg)}}
+@keyframes epop{from{opacity:0;transform:translateY(22px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes ebob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+@keyframes eshine{to{background-position:200% 0}}
+@keyframes sh{20%{transform:translateX(-8px)}50%{transform:translateX(8px)}80%{transform:translateX(-4px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.wrapc{position:relative;z-index:1;width:100%;max-width:440px;margin-top:46px}
+.ecard{position:relative;width:100%;padding:62px 26px 26px;border-radius:32px;background:rgba(255,255,255,.97);text-align:center;box-shadow:0 30px 60px -14px rgba(30,27,75,.5),0 0 0 7px rgba(255,255,255,.3);animation:epop .6s cubic-bezier(.2,.9,.3,1.2) both}
+.ebadge{position:absolute;left:50%;top:-48px;width:96px;height:96px;margin-left:-48px;border-radius:50%;display:grid;place-items:center;font-size:50px;line-height:1;background:linear-gradient(145deg,#FFD35C,#FF9F43);box-shadow:0 12px 24px rgba(0,0,0,.28),inset 0 -6px 0 rgba(0,0,0,.1),0 0 0 7px #fff;animation:ebob 2.6s ease-in-out infinite}
+h1{margin:0 0 18px;font:800 36px/1.15 var(--f-h);background:linear-gradient(90deg,var(--violet),var(--coral),var(--violet)) 0 0/200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:eshine 5s linear infinite}
+.efield{position:relative;display:block}
+.eic{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:22px;pointer-events:none;z-index:1}
+.efield.shake{animation:sh .3s}
+#code{display:block;width:100%;margin:6px 0;padding:15px 64px 15px 48px;border:3px solid #E8E4F5;border-radius:18px;background:#FAF9FF;color:var(--ink);font:800 28px/1.2 var(--f-h);letter-spacing:.32em;text-indent:.3em;text-transform:uppercase;text-align:center;outline:0;transition:border-color .2s,box-shadow .2s,background .2s}
+#code::placeholder{color:#ADAAC9;font:600 17px var(--f-b);letter-spacing:.04em;text-indent:0}
+#code:focus{border-color:var(--violet);background:#fff;box-shadow:0 0 0 5px rgba(108,77,246,.2)}
+.efield.err #code{border-color:var(--bad)}
+.efield button.vkb{background:var(--violet);box-shadow:0 3px 0 var(--violet-d)}
+#msg{min-height:1.4em;margin:8px 0 8px;font-weight:600;font-size:14.5px;color:var(--mut)}
+#msg.bad{color:var(--bad)}
+.ego{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;border:0;border-radius:18px;font:800 22px/1.2 var(--f-h);color:#fff;cursor:pointer;background:linear-gradient(135deg,#FF5E7E,#FF9F43);box-shadow:0 6px 0 #D93A5C,0 16px 26px -8px rgba(255,94,126,.6);transition:transform .15s,box-shadow .15s}
+.ego::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:shine 3.4s ease-in-out infinite}
+@keyframes shine{60%,100%{left:130%}}
+.ego:hover{transform:translateY(-3px)}
+.ego:active{transform:translateY(5px);box-shadow:0 1px 0 #D93A5C,0 4px 8px rgba(0,0,0,.16)}
+.ego:disabled{opacity:.75;cursor:wait}
+.ego b{transition:transform .2s}.ego:hover b{transform:translateX(6px)}
+.ego:disabled b{display:inline-block;animation:spin .8s linear infinite}
+:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+@media(max-width:480px){.ecard{padding:58px 18px 22px}h1{font-size:31px}#code{font-size:25px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="entry">
+  <i class="fl f1">🎮</i><i class="fl f2">⭐</i><i class="fl f3">🧩</i><i class="fl f4">🏆</i><i class="fl f5">🎁</i><i class="fl f6">✨</i>
+  <div class="wrapc"><main class="ecard">
+    <div class="ebadge">🎮</div>
+    <h1>Vào game</h1>
+    <label class="efield" id="field">
+      <span class="eic">🎟️</span>
+      <input id="code" maxlength="5" placeholder="NHẬP MÃ GAME" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-label="Nhập mã game">
+      <button type="button" class="vkb" data-vk="code" data-ok="enter()" title="Bàn phím ảo" aria-label="Bàn phím ảo">⌨️</button>
+    </label>
+    <p id="msg" role="status" aria-live="polite"></p>
+    <button class="ego" id="go" type="button">Vào chơi thôi <b>➜</b></button>
+  </main></div>
+</div>
+
+<script src="hub.js"></script>
+<script src="vk.js"></script>
+<script>
+(function(){
+  const $=s=>document.querySelector(s), inp=$('#code'), msg=$('#msg'), btn=$('#go'), field=$('#field');
+  const say=(t,bad)=>{msg.textContent=t||'';msg.className=bad?'bad':''};
+  const clean=v=>String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5);
+  inp.addEventListener('input',()=>{const c=clean(inp.value);if(inp.value!==c)inp.value=c;say('');field.classList.remove('err')});
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')window.enter()});
+  btn.addEventListener('click',()=>window.enter());
+  function bad(t){say(t,true);field.classList.add('err','shake');setTimeout(()=>field.classList.remove('shake'),350)}
+
+  window.enter=async function(){
+    if(btn.disabled)return;
+    const c=clean(inp.value);
+    if(c.length<5){inp.focus();return bad('Mã gồm 5 ký tự. Em nhập đủ nhé.')}
+    btn.disabled=true;say('Đang tìm game…');
+    try{
+      const r=await Hub.resolve(c);
+      if(!r){btn.disabled=false;return bad('Chưa có game nào dùng mã này. Em kiểm tra lại mã thầy cô đưa.')}
+      say('Đang vào '+r.game.name+'…');
+      location.replace(r.url);
+    }catch(e){
+      btn.disabled=false;
+      bad(e&&e.dup?e.message:'Không kết nối được. Kiểm tra mạng rồi thử lại.');
+    }
+  };
+
+  /* Khi bàn phím ảo mở, cuộn để ô nhập mã nằm hẳn phía trên bàn phím */
+  document.addEventListener('click',e=>{
+    if(!e.target.closest||!e.target.closest('.vkb'))return;
+    setTimeout(()=>{const k=$('#vk');if(!k||k.style.display!=='block')return;
+      const lim=innerHeight-k.offsetHeight-10,r=msg.getBoundingClientRect();
+      if(r.bottom>lim)window.scrollBy({top:r.bottom-lim,behavior:'smooth'})},120);
+  },true);
+
+  const pre=clean(new URLSearchParams(location.search).get('code'));
+  /* link có kèm game → chuyển trang NGAY, không chờ mạng. Trang game tự kiểm tra mã và đưa về đây nếu sai game. */
+  const gp=new URLSearchParams(location.search).get('g'),fast=pre&&gp&&!new URLSearchParams(location.search).get('re')?Hub.quick(pre,gp):null;
+  Hub.warm();                                      /* đăng nhập ẩn danh sẵn trong lúc học sinh gõ mã */
+  if(fast){inp.value=pre;say('Đang vào '+fast.game.name+'…');btn.disabled=true;location.replace(fast.url)}
+  else if(pre){inp.value=pre;if(pre.length===5)window.enter()}else inp.focus();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head><script src="../../quota.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chạy đua – Điều khiển</title>
+<link rel="stylesheet" href="race.css">
+<style>
+body{overflow:auto}
+#app{height:auto;min-height:100%;overflow:visible}
+.top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:rgba(15,23,42,.9);color:#fff}
+.top h1{margin:0;font-size:20px;flex:1;min-width:160px}
+.top .code{font-size:30px;font-weight:900;letter-spacing:6px;color:#fde047;background:#ffffff18;padding:2px 14px;border-radius:12px}
+.top .st{padding:3px 12px;border-radius:99px;font-weight:800;background:#ffffff22}
+.top button{padding:8px 14px;font-size:15px}
+.wrapA{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:14px;display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:14px;align-items:start}
+@media(max-width:960px){.wrapA{grid-template-columns:1fr}}
+.panel{background:rgba(255,255,255,.96);border-radius:20px;padding:14px 16px;box-shadow:0 8px 24px #0003}
+.panel h3{margin:0 0 8px;color:#0f172a}
+.lanes{display:flex;flex-direction:column;gap:6px;max-height:68vh;overflow:auto}
+.ln{display:flex;align-items:center;gap:8px}
+.ln .nm{flex:0 0 150px;font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ln .nm small{color:#64748b;font-weight:700}
+.ln .tk{position:relative;flex:1;height:46px;border-radius:12px;background:#475569;border:2px solid #fff;overflow:hidden}
+.ln .tk .grass{position:absolute;left:0;right:0;top:0;height:5px;background:#4ade80}
+.ln .tk .lane{position:absolute;left:0;right:0;top:55%;height:3px;background:repeating-linear-gradient(90deg,#fff 0 18px,transparent 18px 36px);opacity:.45}
+.ln .tk .fl{position:absolute;right:0;top:0;bottom:0;width:26px;background:repeating-conic-gradient(#111 0 25%,#fff 0 50%) 0 0/13px 13px;border-left:2px solid #fff}
+.ln .tk s{position:absolute;top:0;bottom:0;width:1px;background:#ffffff30}
+.ln .rn{position:absolute;top:6px;transform:translateX(-50%);transition:left .9s cubic-bezier(.4,0,.2,1);text-align:center;line-height:1}
+.ln .rn .ra{font-size:28px;display:block;filter:drop-shadow(0 3px 2px #0006);animation:run .5s ease-in-out infinite alternate}
+.ln .rn.fin .ra{animation:none}.ln .rn.fz .ra{filter:drop-shadow(0 0 8px #7dd3fc) saturate(.3);animation:none}
+.ln .rn .ri{position:absolute;left:50%;top:-6px;transform:translateX(-50%);font-style:normal;font-size:20px}
+.ln .x{flex:0 0 28px;padding:2px 0;font-size:13px;background:#e5e7eb;color:#475569;box-shadow:none}
+.ln.fz .tk{box-shadow:0 0 0 3px #7dd3fc}.ln.bk .tk{box-shadow:0 0 0 3px #f97316}
+.feed{max-height:34vh;overflow:auto;font-size:15px}.feed div{padding:5px 0;border-bottom:1px solid #e5e7eb}
+.big2{font-size:clamp(34px,6vw,64px);font-weight:900;text-align:center;color:#c2410c}
+.rank li{display:flex;gap:8px;align-items:center;padding:4px 0;font-weight:800;list-style:none}.rank{margin:0;padding:0}
+.rank .n{width:30px;text-align:center}.rank .p{margin-left:auto;color:#64748b;font-weight:700;font-size:14px}
+.lg{min-height:100vh;display:grid;place-items:center;padding:16px;position:relative;z-index:2}
+.lg form{width:100%;max-width:380px;background:#fff;border-radius:22px;padding:26px 22px;text-align:center;box-shadow:0 10px 30px #0004}
+.lg h2{margin:0 0 14px;color:#c2410c}
+.dash{position:fixed;left:8px;bottom:8px;z-index:50;background:rgba(20,33,61,.82);color:#fff;font:600 12px/1 system-ui,sans-serif;padding:7px 10px;border-radius:8px;text-decoration:none}
+</style>
+</head>
+<body class="adm">
+<div class="scene" aria-hidden="true">
+  <div class="sun"></div><i class="cl c1">☁️</i><i class="cl c2">☁️</i><i class="cl c3">☁️</i>
+  <div class="hill h1"></div><div class="hill h2"></div><div class="flags"></div><div class="stand"></div>
+  <div class="crowd" id="crowd"></div><div class="road"></div>
+</div>
+<div id="app"></div>
+<div id="toast"></div>
+<div class="ov" id="ovC"><div class="cnt" id="ovCn">3</div></div>
+<div class="tools"><button id="bSnd" title="Bật/tắt âm thanh">🔊</button><button id="bFs" title="Toàn màn hình">⛶</button></div>
+<a class="dash" href="../../admin.html" title="Về dashboard chung">⌂ Dashboard chung</a>
+
+<script>window.APPMODE = 'admin';</script>
+<script src="race.js"></script>
+<script>
+(function () {
+  'use strict';
+  document.getElementById('crowd').innerHTML = Array.from({ length: 60 }, (_, i) => '<span>' + ['🙌', '🧑‍🎓', '📣', '👏', '🎉', '🧒', '🙋'][i % 7] + '</span>').join('');
+  const qs = new URLSearchParams(location.search);
+  const CTL = String(qs.get('ctl') || '').toUpperCase(), REP = String(qs.get('rep') || '').toUpperCase();
+  const CODE = CTL || REP, app = $('#app');
+  let S = null, PL = {}, QS = [], NQ = 1, LGall = {}, TI = null, lastKey = '', seen = new Set(), FZ = {}, BK = {}, FEED = [], finSeen = new Set(), autoEnded = false, LGat = 0;
+  $('#bSnd').textContent = Snd.mute ? '🔇' : '🔊';
+  $('#bSnd').onclick = () => { $('#bSnd').textContent = Snd.toggle() ? '🔇' : '🔊'; };
+  $('#bFs').onclick = () => { const d = document, e = d.documentElement; if (d.fullscreenElement) d.exitFullscreen(); else (e.requestFullscreen || (() => {})).call(e); };
+  const stored = () => { try { const j = JSON.parse(localStorage.getItem('hubPwL') || 'null'); if (j && j.p && j.t > Date.now()) return j.p; } catch (_) {} try { return sessionStorage.getItem('hubPw'); } catch (_) { return null; } };
+  const keep = pw => { try { sessionStorage.setItem('hubPw', pw); localStorage.setItem('hubPwL', JSON.stringify({ p: pw, t: Date.now() + 432e5 })); } catch (_) {} };
+
+  function login(msg) {
+    app.innerHTML = `<div class="lg"><form id="f"><h2>🏁 Chạy đua – Admin</h2>
+      <input class="fld" id="pw" type="password" placeholder="Mật khẩu admin" autocomplete="current-password">
+      <div class="err" id="er">${esc(msg || '')}</div><button class="ego" id="go">Đăng nhập</button></form></div>`;
+    $('#f').onsubmit = async e => {
+      e.preventDefault(); ADMPW = $('#pw').value; $('#er').textContent = '';
+      try { TOK = null; await fbAuth(); keep(ADMPW); start(); } catch (x) { $('#er').textContent = x.message; }
+    };
+    $('#pw').focus();
+  }
+
+  async function start() {
+    if (!CODE) return location.replace('../../admin.html');
+    try {
+      S = await fb(G('sessions/' + CODE));
+      if (!S) { app.innerHTML = '<div class="lg"><form><h2>Không tìm thấy phòng ' + esc(CODE) + '</h2><button class="ego" type="button" onclick="location.href=\'../../admin.html\'">Về dashboard</button></form></div>'; return; }
+      NQ = +S.nq || 1;
+      try { QS = JSON.parse((await fb(G('quiz/' + CODE))) || '[]'); } catch (_) { QS = []; }
+      const ev = await fbEvents(CODE, ''); seen = new Set(Object.keys(ev)); lastKey = Object.keys(ev).sort().pop() || '';
+      Object.keys(ev).sort().forEach(k => feedEv(ev[k], true));
+      await tick(true);
+      TI = setInterval(tick, 1500);
+    } catch (e) { app.innerHTML = '<div class="lg"><form><h2>Lỗi</h2><p class="err">' + esc(e.message) + '</p></form></div>'; }
+  }
+
+  /* ---------- Nhật ký sự kiện ---------- */
+  function feedEv(e, quiet) {
+    if (!e) return;
+    const t = e.type; let h = '';
+    if (t === 'step') h = `🚀 ${avOf(e.fa)} <b>${esc(e.fn)}</b> dùng năng lực: tiến thêm 1 bước`;
+    else if (t === 'back') { h = `⏪ ${avOf(e.fa)} <b>${esc(e.fn)}</b> kéo lùi ${avOf(e.ta)} <b>${esc(e.tn)}</b> 1 bước`; if (e.to && !quiet) { BK[e.to] = 1; setTimeout(() => { delete BK[e.to]; draw(); }, 1600); } }
+    else if (t === 'freeze') { h = `🧊 ${avOf(e.fa)} <b>${esc(e.fn)}</b> đóng băng ${avOf(e.ta)} <b>${esc(e.tn)}</b> 3 giây`; if (e.to && !quiet) { FZ[e.to] = 1; Snd.freeze(); setTimeout(() => { delete FZ[e.to]; draw(); }, FREEZE_MS); } }
+    if (h) FEED.unshift(h);
+    FEED = FEED.slice(0, 60);
+  }
+
+  async function tick(first) {
+    try {
+      const [s, p, ev] = await Promise.all([fb(G('sessions/' + CODE)), fb(G('players/' + CODE)), fbEvents(CODE, lastKey)]);
+      if (!s) return;
+      const prev = S && S.status; S = s; PL = p || {};
+      Object.keys(ev).sort().forEach(k => { if (seen.has(k)) return; seen.add(k); lastKey = k; feedEv(ev[k]); });
+      L().forEach(r => { if (r.fin > 0 && !finSeen.has(r.id)) { finSeen.add(r.id); if (!first) { FEED.unshift(`🏁 ${avOf(r.av)} <b>${esc(r.name)}</b> về đích!`); Snd.cheer(2.2, .08); } } });
+      if (S.status === 'ended' || Date.now() - LGat > 8000) { LGat = Date.now(); try { LGall = (await fb(G('logs/' + CODE))) || {}; } catch (_) {} }
+      /* có người về đích đầu tiên thì cuộc đua kết thúc */
+      const all = L(); if (CTL && S.status === 'running' && !autoEnded && all.length && all.some(r => r.fin > 0)) { autoEnded = true; endRace(true); }
+      if (prev === 'waiting' && S.status === 'running' && !first) { /* đã bắt đầu từ máy khác */ }
+      draw();
+    } catch (e) { /* thử lại lượt sau */ }
+  }
+  const L = () => rankPlayers(PL);
+
+  /* ---------- Điều khiển ---------- */
+  function countdownStart() {
+    return new Promise(res => {
+      const ov = $('#ovC'), n = $('#ovCn'); ov.style.display = 'flex'; Snd.start(); let k = 3; n.textContent = k;
+      const t = setInterval(() => { k--; if (k > 0) n.textContent = k; else if (k === 0) n.textContent = 'GO!'; else { clearInterval(t); ov.style.display = 'none'; res(); } }, 900);
+    });
+  }
+  async function startRace() {
+    if (!L().length && !confirm('Chưa có người chơi nào trong phòng. Vẫn bắt đầu?')) return;
+    try { await fb(G('sessions/' + CODE), 'PATCH', { status: 'running', startedAt: { '.sv': 'timestamp' } }); S.status = 'running'; draw(); await countdownStart(); } catch (e) { toast(e.message); }
+  }
+  async function endRace(auto) {
+    if (!auto && !confirm('Kết thúc cuộc đua và hiện bảng tóm tắt cho tất cả?')) return;
+    try { await fb(G('sessions/' + CODE), 'PATCH', { status: 'ended', endedAt: { '.sv': 'timestamp' } }); S.status = 'ended'; Snd.win(); draw(); } catch (e) { toast(e.message); }
+  }
+  async function kick(id) {
+    const r = PL[id]; if (!r || !confirm('Mời ' + r.name + ' ra khỏi phòng?')) return;
+    try { await fb(G('players/' + CODE + '/' + id), 'DELETE'); delete PL[id]; draw(); } catch (e) { toast(e.message); }
+  }
+  function toast(t) { const d = document.createElement('div'); d.textContent = t; $('#toast').appendChild(d); setTimeout(() => d.remove(), 4000); }
+  const link = () => { const u = new URL('index.html', location.href); u.searchParams.set('code', CODE); return u.href; };
+  async function copy(t) { try { await navigator.clipboard.writeText(t); toast('Đã chép: ' + t); } catch (_) { prompt('Chép link này:', t); } }
+  function csv() {
+    const rows = [['Hạng', 'Tên', 'Bước', 'Về đích', 'Câu đúng', 'Câu sai (lượt)', 'Chính xác %']];
+    L().forEach((r, i) => rows.push([i + 1, r.name, (r.pos | 0) + '/' + NQ, r.fin > 0 ? 'Có' : 'Chưa', r.ok | 0, r.bad | 0, acc(r)]));
+    const b = new Blob(['﻿' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'chay-dua-' + CODE + '.csv'; a.click();
+  }
+
+  /* ---------- Vẽ (khung vẽ 1 lần theo trạng thái; làn đua cập nhật tại chỗ để avatar chạy mượt) ---------- */
+  let shell = '';
+  const posLeft = pct => `calc(14px + ${(pct * 94).toFixed(2)}% - ${(pct * 40).toFixed(1)}px)`;
+  function laneRow(r, ticks) {
+    return `<div class="ln" data-id="${r.id}"><div class="nm"></div><div class="tk"><div class="grass"></div><div class="lane"></div>${ticks}<div class="fl"></div>
+      <div class="rn"><span class="ra"></span><i class="ri"></i></div></div>${CTL && S.status !== 'ended' ? `<button class="x" data-k="${r.id}" title="Mời ra khỏi phòng">✕</button>` : ''}</div>`;
+  }
+  function updLanes() {
+    const box = $('#lanes'); if (!box) return;
+    const ticks = Array.from({ length: Math.max(0, NQ - 1) }, (_, k) => `<s style="left:${((k + 1) / NQ * 94).toFixed(2)}%"></s>`).join('');
+    const ranks = {}; L().forEach((r, i) => ranks[r.id] = i + 1);
+    const ids = Object.keys(PL).filter(k => PL[k] && PL[k].name).sort((a, b) => (PL[a].joined | 0) - (PL[b].joined | 0));
+    box.querySelectorAll('.ln').forEach(e => { if (!PL[e.dataset.id]) e.remove(); });
+    box.querySelectorAll('.hint').forEach(e => e.remove());
+    ids.forEach(id => { if (!box.querySelector('.ln[data-id="' + id + '"]')) box.insertAdjacentHTML('beforeend', laneRow({ id }, ticks)); });
+    if (!ids.length) box.innerHTML = '<p class="hint">Chưa có người chơi. Gửi mã hoặc link cho học sinh.</p>';
+    ids.forEach(id => {
+      const r = PL[id], e = box.querySelector('.ln[data-id="' + id + '"]'), pct = Math.min(1, (r.pos | 0) / NQ), f = r.fin > 0, rn = e.querySelector('.rn');
+      e.className = 'ln' + (FZ[id] ? ' fz' : '') + (BK[id] ? ' bk' : '');
+      e.querySelector('.nm').innerHTML = `${f ? '🏁' : '#' + ranks[id]} ${esc(r.name)} <small>${r.pos | 0}/${NQ}</small>`;
+      rn.className = 'rn' + (f ? ' fin' : '') + (FZ[id] ? ' fz' : ''); rn.style.left = posLeft(pct);
+      rn.querySelector('.ra').textContent = avOf(r.av); rn.querySelector('.ri').textContent = FZ[id] ? '❄️' : BK[id] ? '⏪' : '';
+    });
+  }
+  function draw() {
+    if (!S) return;
+    const st = S.status, ended = st === 'ended', P = L();
+    const key = [st, NQ, S.title, CTL].join('|');
+    if (key !== shell) {
+      shell = key;
+      const btns = CTL ? (st === 'waiting' ? '<button class="gr" id="bS">▶ Bắt đầu cuộc đua</button>' : st === 'running' ? '<button class="rd" id="bE">⏹ Kết thúc</button>' : '') : '';
+      const stTxt = { waiting: '⏳ Đang chờ', running: '🏃 Đang đua', ended: '🏁 Đã kết thúc' }[st] || st;
+      app.innerHTML = `<div class="top"><h1>🏁 ${esc(S.title || 'Chạy đua')}</h1><span class="code">${esc(CODE)}</span><span class="st">${stTxt}</span>
+        <span class="st" id="cnt"></span><span class="st">Đường đua: ${NQ} bước</span>
+        <button class="alt" id="bL">🔗 Chép link</button>${btns}${ended ? '<button class="alt" id="bC">⬇ CSV</button>' : ''}</div>
+        <div class="wrapA"><div>${ended ? '<div class="panel" id="sumP"></div>' : '<div class="panel"><h3>🛣️ Đường đua</h3><div class="lanes" id="lanes"></div></div>'}</div>
+        <div>${st === 'waiting' ? `<div class="panel" style="margin-bottom:14px"><h3>Mời học sinh vào</h3><div class="big2">${esc(CODE)}</div><p class="hint" style="text-align:center">Học sinh mở trang chủ rồi nhập mã này. Hoặc gửi link:<br><b style="word-break:break-all">${esc(link())}</b></p></div>` : ''}
+        ${ended ? '' : '<div class="panel" style="margin-bottom:14px"><h3>🥇 Xếp hạng</h3><ol class="rank" id="rk"></ol></div>'}
+        <div class="panel"><h3>📣 Diễn biến</h3><div class="feed" id="fd"></div></div></div></div>`;
+      const g = id => document.getElementById(id);
+      if (g('bS')) g('bS').onclick = startRace; if (g('bE')) g('bE').onclick = () => endRace(false);
+      g('bL').onclick = () => copy(link()); if (g('bC')) g('bC').onclick = csv;
+      $('.wrapA').addEventListener('click', e => { const b = e.target.closest('.x'); if (b) kick(b.dataset.k); });
+    }
+    $('#cnt').textContent = '👥 ' + P.length;
+    if (ended) { const sp = $('#sumP'); if (sp) sp.innerHTML = `<div class="big2">🏆 Cuộc đua kết thúc</div>${sumHtml(PL, LGall, QS, NQ, '')}`; }
+    else {
+      updLanes();
+      $('#rk').innerHTML = P.slice(0, 10).map((r, i) => `<li><span class="n">${['🥇', '🥈', '🥉'][i] || i + 1}</span><span>${avOf(r.av)} ${esc(r.name)}</span><span class="p">${r.fin > 0 ? '🏁 về đích' : (r.pos | 0) + '/' + NQ} · ✅${r.ok | 0}</span></li>`).join('') || '<li class="hint">Chưa có ai.</li>';
+    }
+    $('#fd').innerHTML = FEED.map(h => `<div>${h}</div>`).join('') || '<p class="hint">Hiệu ứng năng lực sẽ hiện ở đây.</p>';
+  }
+
+  (async function boot() {
+    const pw = stored(); if (pw) { ADMPW = pw; try { await fbAuth(); return start(); } catch (e) { /* sai mật khẩu đã lưu */ } }
+    login();
+  })();
+})();
+</script>
+</body>
+</html>
