@@ -65,6 +65,38 @@ async function fbEvents(code, lastKey) {
   return (await fb(G('events/' + code), 'GET', undefined, q)) || {};
 }
 
+/* ---------- Đếm ngược xuất phát đồng bộ (3-2-1-GO) ----------
+   Mọi máy cùng đếm theo MỐC GIỜ MÁY CHỦ (session.startedAt) nên "GO!" xảy ra cùng lúc, câu đầu tiên hiện sau GO.
+   startedAt + CD_LEAD = giây GO; 3 giây trước đó là 3-2-1; phần dư đầu là "Sẵn sàng" (đủ cho máy vào chậm nhịp cập nhật). */
+const CD_LEAD = 5000, CD_GO = 900;
+/* độ lệch đồng hồ máy này so với máy chủ: ghi một mốc giờ máy chủ rồi đọc lại */
+async function fbClockOffset(path) {
+  try {
+    const t0 = Date.now(), r = await fb(path, 'PATCH', { ping: { '.sv': 'timestamp' } }), t1 = Date.now();
+    return r && +r.ping > 0 ? +r.ping - (t0 + t1) / 2 : 0;
+  } catch (_) { return 0; }
+}
+const raceInCountdown = (startAt, off) => !!startAt && Date.now() + off < startAt + CD_LEAD + CD_GO;
+function raceCountdown(startAt, off, ov, n, done) {
+  const goAt = startAt + CD_LEAD, endAt = goAt + CD_GO; let last = '', timer = null;
+  const set = (txt, cls) => {
+    n.textContent = txt; n.style.fontSize = cls === 'rdy' ? 'min(14vw,90px)' : ''; n.style.animation = 'none'; void n.offsetWidth; n.style.animation = '';
+  };
+  const frame = () => {
+    const t = Date.now() + off, rem = goAt - t;
+    if (t >= endAt) { ov.style.display = 'none'; return done(); }
+    const k = rem > 3000 ? 'R' : rem > 2000 ? '3' : rem > 1000 ? '2' : rem > 0 ? '1' : 'GO!';
+    if (k !== last) {
+      last = k;
+      if (k === 'R') set('Sẵn sàng…', 'rdy'); else set(k);
+      if (k === 'GO!') Snd.go(); else if (k !== 'R') Snd.beep();
+    }
+    timer = setTimeout(frame, 40);
+  };
+  ov.style.display = 'flex'; frame();
+  return () => clearTimeout(timer);
+}
+
 /* ---------- Avatar (emoji) ---------- */
 const AVS = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🦆','🦉','🦄','🐝','🦋','🐌','🐞','🐢','🐍','🦖','🐙','🐠','🐬','🐳','🦈','🐘','🦒','🦀','🐊'];
 const avOf = a => AVS.includes(a) ? a : '🐾';
@@ -174,6 +206,8 @@ const Snd = (() => {
     unlock() { ctx(); },
     horn, cheer,
     start() { horn(); setTimeout(() => cheer(3, .08), 700); },
+    beep() { tone(660, 0, .16, 'square', .05, 1600); },
+    go() { horn(); setTimeout(() => cheer(3, .08), 700); },
     step() { tone(660, 0, .09, 'triangle', .07); tone(880, .09, .12, 'triangle', .07); cheer(.9, .035); },
     bad() { tone(220, 0, .22, 'triangle', .07); },
     power() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .08, .14, 'triangle', .07)); },

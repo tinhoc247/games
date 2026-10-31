@@ -5,7 +5,7 @@ Cuộc đua online nhiều người, dùng chung thư viện câu hỏi của hu
 ## Cách dùng
 1. Vào dashboard chung → chọn bộ câu hỏi → chọn game **Chạy đua** → **Tạo mã**.
 2. **Mở phòng điều khiển**: thầy cô thấy mọi người chơi di chuyển trên đường đua. Học sinh nhập mã ở trang chủ (hoặc dùng "Chép link kèm mã") rồi chọn tên, nhân vật.
-3. Khi đủ người bấm **▶ Bắt đầu cuộc đua**: đếm ngược 3-2-1, kèn xuất phát và tiếng reo hò vang lên, cả lớp chạy cùng lúc.
+3. Khi đủ người bấm **▶ Bắt đầu cuộc đua**: màn hình hiện "Sẵn sàng…" rồi đếm ngược **3 - 2 - 1 - GO!** (có tiếng bíp, kèn xuất phát và tiếng reo hò ở GO!). Cả lớp đếm theo cùng một mốc giờ máy chủ nên **GO! xảy ra cùng lúc trên mọi máy**, sau đó câu hỏi đầu tiên mới hiện ra. Bạn vào/tải lại trang giữa lúc đang đếm sẽ đếm tiếp cùng cả lớp.
 4. Cuộc đua **kết thúc ngay khi có người về đích đầu tiên** (người đó thắng), hoặc thầy cô bấm **⏹ Kết thúc** sớm hơn. Báo cáo xem lại ở nút 📊 của dashboard (`admin.html?rep=MÃ`), có nút tải CSV.
 
 ## Luật chơi

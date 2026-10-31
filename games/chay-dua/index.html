@@ -37,7 +37,7 @@
   let CODE = String(q.get('code') || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
   let S = null, PL = {}, NQ = 0, RAW = [], VALID = [], ORD = [], qn = 0;
   let pos = 0, okN = 0, badN = 0, wq = 0, fin = 0, LG = [];
-  let frozenUntil = 0, FZ = {}, seen = new Set(), lastKey = '', TI = null, started = false, ENDED = false, power = false, joinAv = '', counting = false, hudOn = false;
+  let OFF = 0, CDX = null, frozenUntil = 0, FZ = {}, seen = new Set(), lastKey = '', TI = null, started = false, ENDED = false, power = false, joinAv = '', counting = false, hudOn = false;
   const LS = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (_) { return null; } };
   const app = $('#app');
 
@@ -93,6 +93,7 @@
     RAW = JSON.parse(raw || '[]'); VALID = RAW.map((x, i) => norm(x) ? i : -1).filter(i => i >= 0);
     if (!VALID.length) throw Error('Phòng chưa có câu hỏi hợp lệ.');
     ORD = shuffle(VALID);
+    OFF = await fbClockOffset(G('players/' + CODE + '/' + ME));
     const me = (await fb(G('players/' + CODE + '/' + ME))) || {};
     if (!fresh) { pos = me.pos | 0; okN = me.ok | 0; badN = me.bad | 0; wq = me.wq | 0; qn = me.qn | 0; fin = me.fin | 0; LG = (await fb(G('logs/' + CODE + '/' + ME))) || []; }
     else { pos = okN = badN = wq = qn = fin = 0; LG = []; }
@@ -124,7 +125,7 @@
       Object.keys(ev).sort().forEach(k => { if (seen.has(k)) return; seen.add(k); lastKey = k; onEvent(ev[k]); });
       const prevStart = started, prevEnd = ENDED; started = S.status === 'running' || S.status === 'ended'; ENDED = S.status === 'ended' || Object.values(PL).some(v => v && v.fin > 0);
       if (!prevStart && S.status === 'running') countdown();
-      if (ENDED && !prevEnd) { close_(); $('#ovP').style.display = 'none'; $('#ovF').style.display = 'none'; $('#ovC').style.display = 'none'; counting = false; drawSummary(true); }
+      if (ENDED && !prevEnd) { close_(); $('#ovP').style.display = 'none'; $('#ovF').style.display = 'none'; $('#ovC').style.display = 'none'; counting = false; if (CDX) { CDX(); CDX = null; } drawSummary(true); }
       drawHud();
       if (ENDED || fin) drawSummary(); else if (!started) drawWait();
     } catch (e) { /* mạng chập chờn: thử lại ở lượt sau */ }
@@ -139,7 +140,9 @@
   function route() {
     if (ENDED || fin) return finishView();
     if (!started) return drawWait();
-    if (!counting) nextQ();
+    if (counting) return;
+    if (S.status === 'running' && raceInCountdown(+S.startedAt, OFF)) return countdown();   /* vào/tải lại giữa lúc đang đếm → đếm tiếp cùng cả lớp */
+    nextQ();
   }
   function drawWait() {
     if (started || fin) return;
@@ -151,16 +154,11 @@
       <p class="hint">${L.length} người đã vào phòng</p>`;
   }
 
-  /* ---------- Đếm ngược xuất phát ---------- */
+  /* ---------- Đếm ngược xuất phát (đồng bộ theo giờ máy chủ): Sẵn sàng → 3 → 2 → 1 → GO! → câu đầu tiên ---------- */
   function countdown() {
     if (counting) return; counting = true; close_(); app.innerHTML = '';
-    const ov = $('#ovC'), n = $('#ovCn'); ov.style.display = 'flex'; Snd.start();
-    let k = 3; n.textContent = k;
-    const t = setInterval(() => {
-      k--; if (k > 0) { n.textContent = k; n.style.animation = 'none'; void n.offsetWidth; n.style.animation = ''; }
-      else if (k === 0) { n.textContent = 'GO!'; n.style.animation = 'none'; void n.offsetWidth; n.style.animation = ''; }
-      else { clearInterval(t); ov.style.display = 'none'; counting = false; if (!ENDED && !fin) nextQ(); }
-    }, 900);
+    const sa = +S.startedAt || (Date.now() + OFF);
+    CDX = raceCountdown(sa, OFF, $('#ovC'), $('#ovCn'), () => { counting = false; CDX = null; if (!ENDED && !fin) nextQ(); });
   }
 
   /* ---------- Hỏi đáp ---------- */

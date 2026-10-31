@@ -123,15 +123,18 @@ body{overflow:auto}
   const L = () => rankPlayers(PL);
 
   /* ---------- Điều khiển ---------- */
-  function countdownStart() {
-    return new Promise(res => {
-      const ov = $('#ovC'), n = $('#ovCn'); ov.style.display = 'flex'; Snd.start(); let k = 3; n.textContent = k;
-      const t = setInterval(() => { k--; if (k > 0) n.textContent = k; else if (k === 0) n.textContent = 'GO!'; else { clearInterval(t); ov.style.display = 'none'; res(); } }, 900);
-    });
+  /* đếm ngược cùng mốc giờ máy chủ với học sinh: Sẵn sàng → 3 → 2 → 1 → GO! */
+  function countdownStart(startAt, off) {
+    return new Promise(res => raceCountdown(startAt, off, $('#ovC'), $('#ovCn'), res));
   }
   async function startRace() {
     if (!L().length && !confirm('Chưa có người chơi nào trong phòng. Vẫn bắt đầu?')) return;
-    try { await fb(G('sessions/' + CODE), 'PATCH', { status: 'running', startedAt: { '.sv': 'timestamp' } }); S.status = 'running'; draw(); await countdownStart(); } catch (e) { toast(e.message); }
+    try {
+      const t0 = Date.now(), r = await fb(G('sessions/' + CODE), 'PATCH', { status: 'running', startedAt: { '.sv': 'timestamp' } }), t1 = Date.now();
+      const sa = r && +r.startedAt > 0 ? +r.startedAt : 0, off = sa ? sa - (t0 + t1) / 2 : 0;
+      S.status = 'running'; if (sa) S.startedAt = sa; draw();
+      await countdownStart(sa || Date.now(), sa ? off : 0);
+    } catch (e) { toast(e.message); }
   }
   async function endRace(auto) {
     if (!auto && !confirm('Kết thúc cuộc đua và hiện bảng tóm tắt cho tất cả?')) return;
