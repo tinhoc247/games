@@ -238,6 +238,7 @@ table.rt .mini.go{background:var(--violet);border-color:var(--violet);color:#fff
     <h1><span class="logo" aria-hidden="true">🎮</span>Dashboard Mini Games</h1>
     <button type="button" id="repBtn" aria-haspopup="dialog">📊 Báo cáo</button>
     <a href="index.html" target="_blank" rel="noopener">👀 Trang học sinh</a>
+    <button type="button" id="tsBtn" title="Xoá dữ liệu giờ máy chủ của học sinh cũ (Đổi Vàng / Bảo vệ)">🧹 Dọn ts</button>
     <button type="button" id="out">↩ Đăng xuất</button>
   </header>
 
@@ -646,6 +647,10 @@ table.rt .mini.go{background:var(--violet);border-color:var(--violet);color:#fff
     catch(er){b.disabled=false;alert('Không xoá được: '+er.message)}
   }
   $('#repBtn').addEventListener('click',openRep);
+  $('#tsBtn').addEventListener('click',async()=>{
+    if(!confirm('Dọn dữ liệu giờ (gold/ts) của học sinh cũ?\nNên làm khi không có lớp nào đang chơi Đổi Vàng / Bảo vệ.'))return;
+    try{await Hub.cleanTs();toast('Đã dọn ts')}catch(er){alert('Không dọn được: '+er.message)}
+  });
 
   /* ---------- khởi động ---------- */
   (async()=>{ if(await Hub.restore()) enter(); else $('#pw').focus(); })();

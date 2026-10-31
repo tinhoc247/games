@@ -503,9 +503,17 @@
   async function deleteSession(it) {
     if (!S.admin) throw Error('Cần đăng nhập admin.');
     const g = GAMES.find(x => x.id === it.game); if (!g) throw Error('Không rõ game.');
-    const parts = g.id === 'kho-bau' ? ['sessions', 'results', 'live'] : g.id === 'chay-dua' ? ['sessions', 'players', 'logs', 'quiz', 'events'] : g.id === 'bao-ve' ? ['sessions', 'players', 'logs', 'quiz', 'moves'] : ['sessions', 'players', 'logs', 'quiz'];
+    /* xoá sạch mọi nhánh của mã; 'sessions' để CUỐI để nếu lỗi giữa chừng vẫn còn trong danh sách và bấm xoá lại được */
+    const parts = g.id === 'kho-bau' ? ['results', 'live', 'sessions'] : g.id === 'chay-dua' ? ['players', 'logs', 'quiz', 'events', 'sessions'] : g.id === 'bao-ve' ? ['players', 'logs', 'quiz', 'moves', 'events', 'sessions'] : ['players', 'logs', 'quiz', 'events', 'sessions'];
     for (const p of parts) await fb(g.ns + p + '/' + it.code, 'DELETE');
     forget(it.code);
+    /* Hết phiên của Đổi Vàng / Bảo vệ thì dọn luôn gold/ts (mỗi học sinh 1 mục giờ máy chủ, không gắn với mã) */
+    if (g.ns === 'gold/') { try { const left = await fb('gold/sessions', 'GET', undefined, 'shallow=true'); if (!left || !Object.keys(left).length) await cleanTs(); } catch (_) {} }
+  }
+  /* Dọn gold/ts: an toàn, học sinh đang chơi chỉ ghi lại mục này khi vào phòng/nối lại. */
+  async function cleanTs() {
+    if (!S.admin) throw Error('Cần đăng nhập admin.');
+    await fb('gold/ts', 'DELETE');
   }
 
   /* ---------- Tra mã cho học sinh: mã này thuộc game nào? ---------- */
@@ -534,5 +542,5 @@
   const quick = (code, gid) => { const g = GAMES.find(x => x.id === gid); code = String(code || '').trim().toUpperCase(); return g && /^[A-Z0-9]{3,8}$/.test(code) ? { game: g, code, url: g.dir + 'index.html?code=' + code } : null; };
 
   window.Hub = { FB, GAMES, S, fb, warm, login, restore, logout, listBanks, legacyCount, migrateLegacy, createSession, recent, forget, codeStatus, resolve, quick, studentLink, rid,
-    readQFile, buildQs, imgPaths, indexImages, findImg, saveBank, renameBank, deleteBank, listSessions, deleteSession };
+    readQFile, buildQs, imgPaths, indexImages, findImg, saveBank, renameBank, deleteBank, listSessions, deleteSession, cleanTs };
 })();
