@@ -145,7 +145,7 @@ body{overflow:auto}
     try { await fb(G('players/' + CODE + '/' + id), 'DELETE'); delete PL[id]; draw(); } catch (e) { toast(e.message); }
   }
   function toast(t) { const d = document.createElement('div'); d.textContent = t; $('#toast').appendChild(d); setTimeout(() => d.remove(), 4000); }
-  const link = () => { const u = new URL('index.html', location.href); u.searchParams.set('code', CODE); return u.href; };
+  const link = () => { const u = new URL('../../index.html', location.href); u.searchParams.set('code', CODE); return u.href; };   /* trang học sinh chung */
   async function copy(t) { try { await navigator.clipboard.writeText(t); toast('Đã chép: ' + t); } catch (_) { prompt('Chép link này:', t); } }
   function csv() {
     const rows = [['Hạng', 'Tên', 'Bước', 'Về đích', 'Câu đúng', 'Câu sai (lượt)', 'Chính xác %']];

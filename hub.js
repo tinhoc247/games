@@ -537,7 +537,8 @@
     return g ? { game: g, code, url: g.dir + 'index.html?code=' + code + '&ok=1' } : null;
   }
 
-  const studentLink = (code, game) => { const g0 = code && game ? GAMES.find(x => x.id === game) : null; if (g0) { const d = new URL(g0.dir + 'index.html', location.href); d.searchParams.set('code', code); return d.href; } const u = new URL('index.html', location.href); if (code) u.searchParams.set('code', code); if (code && game) u.searchParams.set('g', game); return u.href; };
+  /* Trang học sinh CHUNG cho mọi game: link chỉ khác nhau ở mã (?code=ABCDE). Game nào do mã quyết định (resolve). */
+  const studentLink = (code) => { const u = new URL('index.html', location.href); if (code) u.searchParams.set('code', code); return u.href; };
   /* link có kèm game (g=...) thì biết ngay game nào, không cần tra mã trên mạng */
   const quick = (code, gid) => { const g = GAMES.find(x => x.id === gid); code = String(code || '').trim().toUpperCase(); return g && /^[A-Z0-9]{3,8}$/.test(code) ? { game: g, code, url: g.dir + 'index.html?code=' + code } : null; };
 

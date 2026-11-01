@@ -20,7 +20,7 @@ games/
 1. Mở `admin.html`, nhập mật khẩu admin (chỉ 1 lần).
 2. Bước 1: chọn bộ câu hỏi (hoặc nạp bộ mới ngay tại đó). Bước 2: chọn game. Bước 3: chỉnh cài đặt rồi bấm **Tạo mã**.
 3. Bấm **Mở phòng điều khiển** (không phải đăng nhập lại) hoặc chép link gửi học sinh.
-4. Học sinh chỉ cần 1 link `index.html`, nhập mã là vào đúng game. Nút **Chép link kèm mã** tạo link trỏ thẳng vào trang của game (`games/ten-game/index.html?code=ABCDE`), học sinh mở là vào luôn, chỉ tải 1 trang. Link chung `index.html` (không kèm mã) vẫn dùng để học sinh tự nhập mã.
+4. **Tất cả game dùng chung 1 trang học sinh: `index.html` ở thư mục gốc.** Link gửi học sinh chỉ khác nhau ở mã: `index.html?code=ABCDE`; trang tự tra mã trên Firebase rồi chuyển vào đúng game. Nút **Chép link kèm mã** (dashboard và phòng điều khiển Chạy đua) đều tạo link này. Link không kèm mã vẫn dùng để học sinh tự nhập mã.
 
 **Báo cáo tất cả lượt chơi**: nút **📊 Báo cáo** trên thanh đầu dashboard mở danh sách mọi lượt chơi của cả 4 game (đọc thẳng từ Firebase, không phụ thuộc máy đang dùng). Mỗi dòng có nút Báo cáo, Phòng và 🗑 Xoá; có ô tìm theo mã/tên và lọc theo game.
 
@@ -37,7 +37,7 @@ Mã gần đây hiện ở cột phải, kèm trạng thái (đang chờ, đang 
 
 ## Mã luôn vào đúng game
 
-- Link có kèm game (`?code=MÃ&g=GAME`, do nút **Chép link kèm mã** tạo) chuyển trang ngay, không chờ mạng. Nếu `g` sai, trang game tự đưa học sinh về cổng để tra lại đúng game. Học sinh gõ mã tay thì cổng tra mã trên Firebase; phiên có trường `game` thì chỉ vào đúng game đó.
+- Link cũ có kèm game (`?code=MÃ&g=GAME`) vẫn chạy: chuyển trang ngay, không chờ mạng. Link mới chỉ có `?code=MÃ` nên mất thêm một lần tra mã (rất nhanh). Học sinh gõ mã tay cũng tra mã trên Firebase; phiên có trường `game` thì chỉ vào đúng game đó.
 - Nếu cùng một mã tồn tại ở 2 game (chỉ xảy ra với mã tạo thẳng trong trang admin của game), cổng không đoán mà báo học sinh nhờ thầy cô tạo mã mới.
 - Mỗi trang game tự từ chối mã của game khác, kể cả khi học sinh mở nhầm link trực tiếp.
 - Game mới nên luôn ghi trường `game` vào phiên chơi (mẫu trong `hub.js` đã có).
