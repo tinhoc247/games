@@ -69,7 +69,7 @@
   function taken() { return new Set(Object.values(PL).map(v => v && v.av)); }
   function drawAv() {
     const t = taken(); if (!joinAv || t.has(joinAv)) joinAv = AVS.filter(a => !t.has(a))[Math.random() * Math.max(1, AVS.filter(a => !t.has(a)).length) | 0] || AVS[0];
-    $('#avs').innerHTML = AVS.map(a => `<button type="button" class="avb${a === joinAv ? ' on' : ''}" data-a="${a}"${t.has(a) ? ' disabled' : ''}>${a}</button>`).join('');
+    $('#avs').innerHTML = AVS.map(a => `<button type="button" class="avb${a === joinAv ? ' on' : ''}" data-a="${a}" title="${AVN[a]}"${t.has(a) ? ' disabled' : ''}>${avH(a)}</button>`).join('');
     $('#avs').onclick = e => { const b = e.target.closest('.avb'); if (b && !b.disabled) { joinAv = b.dataset.a; drawAv(); } };
   }
   async function join() {

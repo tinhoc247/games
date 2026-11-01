@@ -141,3 +141,10 @@ button.alt{background:#0ea5e9;box-shadow:0 4px 0 #0369a1}button.gr{background:#1
 .ecard.pk #avs{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px;padding:5px;margin:6px 0;-webkit-overflow-scrolling:touch}
 .ecard.pk .avb{width:100%;height:auto;aspect-ratio:1/1;margin:0;font-size:24px}
 .ecard.pk>button{padding:11px;font-size:18px}
+
+/* ===== Avatar SVG ===== */
+.avs{display:inline-block;vertical-align:middle;width:1.5em;height:1.5em;border-radius:24%;box-shadow:0 2px 4px rgba(0,0,0,.25);flex:none}
+.avb .avs{width:100%;height:100%;box-shadow:none;display:block}
+.rn .ra .avs{width:1.5em;height:1.5em}.rn.me .ra .avs{width:1.45em;height:1.45em}
+.tg2 .avs{width:1.5em;height:1.5em}
+.pc .avs{width:1.6em;height:1.6em;margin-right:2px}

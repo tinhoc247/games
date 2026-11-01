@@ -175,7 +175,7 @@ body{overflow:auto}
       e.className = 'ln' + (FZ[id] ? ' fz' : '') + (BK[id] ? ' bk' : '');
       e.querySelector('.nm').innerHTML = `${f ? '🏁' : '#' + ranks[id]} ${esc(r.name)} <small>${r.pos | 0}/${NQ}</small>`;
       rn.className = 'rn' + (f ? ' fin' : '') + (FZ[id] ? ' fz' : ''); rn.style.left = posLeft(pct);
-      rn.querySelector('.ra').textContent = avOf(r.av); rn.querySelector('.ri').textContent = FZ[id] ? '❄️' : BK[id] ? '⏪' : '';
+      { const ra = rn.querySelector('.ra'); if (ra.dataset.a !== String(r.av)) { ra.dataset.a = String(r.av); ra.innerHTML = avOf(r.av); } } rn.querySelector('.ri').textContent = FZ[id] ? '❄️' : BK[id] ? '⏪' : '';
     });
   }
   function draw() {
