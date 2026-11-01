@@ -40,7 +40,8 @@
   let OFF = 0, CDX = null, frozenUntil = 0, FZ = {}, seen = new Set(), lastKey = '', TI = null, started = false, ENDED = false, power = false, joinAv = '', counting = false, hudOn = false;
   const LS = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (_) { return null; } };
   const app = $('#app');
-  window.__racePlaying = () => hudOn && !ENDED;   /* cho script tạm dừng bên dưới biết đang trong lúc chơi */
+  window.__racePlaying = () => hudOn && !ENDED;
+  setInterval(() => { try { Snd.music(hudOn && !ENDED); } catch (_) {} }, 500);   /* nhạc nền chỉ phát trong lúc đua */   /* cho script tạm dừng bên dưới biết đang trong lúc chơi */
 
   function toast(t, good) {
     const d = document.createElement('div'); if (good) d.className = 'good'; d.textContent = t; $('#toast').appendChild(d);

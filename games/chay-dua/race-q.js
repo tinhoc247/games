@@ -37,7 +37,7 @@ function showQ(q,cb,pre,use,dn){DQ=dn?{q,cb,pre,dn}:null;RCB=cb;IU=null;CB=o=>{S
  const ps=q.imgPos,im=q.img&&ty!='pt'?imgH(q.img):'',qt=`<h3>${esc(q.q||'')}</h3>`;
  let h=`${pre||''}${dn?useBar(use||[],dn):''}`+(ps=='left'||ps=='right'?`<div style="display:flex;gap:10px;align-items:center;flex-direction:${ps=='left'?'row':'row-reverse'}"><div style="flex:0 0 42%">${im}</div><div style="flex:1">${qt}</div></div>`:qt+im);
  if(ty=='pt')h+=q.img?ptHtml(q)+'<div id="fb"></div><button id="chk" onclick="chkPt()" style="margin-top:6px">✔ Kiểm tra đáp án</button>':ptBtns(q);
- else if(ty=='single')h+=q.o.map((o,i)=>`<button class="opt" onclick="pick(${i},${q.a},this)">${ob(q,i,'ABCD'[i]+'. ')}</button>`).join('');
+ else if(ty=='single')h+=q.o.map((o,i)=>`<button class="opt" onclick="pick(${i},${q.a},this)">${ob(q,i)}</button>`).join('');
  else if(ty=='pos')h+=`<div class="tbar">${q.tb.map((b,i)=>`<button class="tb" onclick="pickPos(${i},this)"><span>${esc(b.icon||'')}</span><small>${esc(b.label||'')}</small></button>`).join('')}</div>`;
  else if(ty=='ord'){q.ord=shuffle([...q.items.keys()]);if(q.ord.every((v,p)=>v==q.a[p]))q.ord.reverse();h+=`<div id="ol"></div><div id="fb"></div><button id="chk" onclick="chkOrd()" style="margin-top:6px">✔ Kiểm tra đáp án</button>`}
  else if(ty=='fill'||ty=='slot'||ty=='cls'){fillInit(q);h+=`<div id="fa"></div><div id="fb"></div><button id="chk" onclick="chkFill()" style="margin-top:6px">✔ Kiểm tra đáp án</button>`}

@@ -201,7 +201,67 @@ const Snd = (() => {
     s.connect(b1); b1.connect(b2); b2.connect(g); g.connect(M);
     s.start(t, Math.random()); lfo.start(t); s.stop(t + dur + .1); lfo.stop(t + dur + .1);
   }
+
+  /* ---------- Nhạc nền vui nhộn (trống + bass + giai điệu vui), chỉ phát trong lúc đua ---------- */
+  const BAR = 1.8, E = BAR / 8, MVOL = .2, fq = s => 261.63 * 2 ** (s / 12);
+  const MUS_CH = [[0, 0], [-5, 0], [-3, 1], [-7, 0], [0, 0], [-5, 0], [-7, 0], [-5, 0]];
+  const MUS_ML = [
+    [[0, 7, 1], [1, 7, 1], [2, 9, 1], [3, 7, 1], [4, 12, 3], [7, 9, 1]],
+    [[0, 11, 1], [1, 11, 1], [2, 12, 1], [3, 11, 1], [4, 7, 3], [7, 4, 1]],
+    [[0, 9, 1], [1, 9, 1], [2, 12, 1], [3, 9, 1], [4, 16, 3], [7, 12, 1]],
+    [[0, 12, 1], [1, 12, 1], [2, 9, 1], [3, 5, 1], [4, 9, 3], [7, 7, 1]],
+    [[0, 7, 1], [1, 7, 1], [2, 9, 1], [3, 7, 1], [4, 12, 3], [7, 14, 1]],
+    [[0, 16, 1], [1, 14, 1], [2, 11, 1], [3, 14, 1], [4, 11, 3], [7, 7, 1]],
+    [[0, 9, 1], [1, 12, 1], [2, 16, 1], [3, 12, 1], [4, 17, 2], [6, 16, 1], [7, 12, 1]],
+    [[0, 14, 1], [1, 14, 1], [2, 11, 1], [3, 14, 1], [4, 7, 2], [6, 11, 1], [7, 14, 1]]];
+  let MS = null, mg = null, dm = null, mOn = false, mTimer = null, nt = 0, mstep = 0;
+  function mnote(f, t, d, type, v, a, bus, lp) {
+    const o = C.createOscillator(), g = C.createGain(); o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(v, t + (a || .01)); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    if (lp) { const fl = C.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.setValueAtTime(lp, t); fl.frequency.exponentialRampToValueAtTime(Math.max(200, lp / 4), t + d); o.connect(fl); fl.connect(g); } else o.connect(g);
+    g.connect(bus || mg); o.start(t); o.stop(t + d + .05);
+  }
+  function mkick(t) {
+    const o = C.createOscillator(), g = C.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .12);
+    g.gain.setValueAtTime(.7, t); g.gain.exponentialRampToValueAtTime(.001, t + .2); o.connect(g); g.connect(dm); o.start(t); o.stop(t + .23);
+  }
+  function mnoise(t, d, v, f, type) {
+    const s = C.createBufferSource(), fl = C.createBiquadFilter(), g = C.createGain(); s.buffer = noise(C); fl.type = type; fl.frequency.value = f;
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); s.connect(fl); fl.connect(g); g.connect(dm); s.start(t, Math.random()); s.stop(t + d + .02);
+  }
+  function playBar(t) {
+    const bar = mstep++ % 8, c = MUS_CH[bar], r = c[0], tn = c[1] ? [0, 3, 7] : [0, 4, 7];
+    for (let b = 0; b < 4; b++) mkick(t + b * 2 * E);
+    [2, 6].forEach(i => mnoise(t + i * E, .14, .4, 2000, 'bandpass'));
+    for (let i = 0; i < 8; i++) mnoise(t + i * E, i % 2 ? .07 : .03, i % 2 ? .18 : .09, 8000, 'highpass');
+    if (bar == 7) for (let k = 1; k < 4; k++) mnoise(t + (6 + k / 2) * E, .08, .28, 2500, 'bandpass');
+    for (let i = 0; i < 8; i++) mnote(fq(r - 12 + (i == 7 ? 7 : i % 2 ? 12 : 0)), t + i * E, E * .8, 'sawtooth', .1, .005, mg, 900);
+    for (let i = 1; i < 8; i += 2) tn.forEach(x => mnote(fq(r + x), t + i * E, E * .45, 'square', .013, .004));
+    MUS_ML[bar].forEach(n => mnote(fq(n[1]), t + n[0] * E, E * n[2] * .92, 'square', .04, .01));
+  }
+  function mInit(c) {
+    if (MS) return;
+    MS = c.createGain(); MS.gain.value = 0;
+    const cp = c.createDynamicsCompressor(); cp.threshold.value = -20; cp.ratio.value = 4; MS.connect(cp); cp.connect(M);
+    mg = c.createGain(); mg.connect(MS); dm = c.createGain(); dm.connect(MS);
+    const dl = c.createDelay(), fbk = c.createGain(), dg = c.createGain(); dl.delayTime.value = E * 1.5; fbk.gain.value = .28; dg.gain.value = .45;
+    mg.connect(dl); dl.connect(fbk); fbk.connect(dl); dl.connect(dg); dg.connect(MS);
+  }
+  function sched() {
+    if (!C) return;
+    if (!mOn || C.state !== 'running') { nt = C.currentTime + .2; return; }
+    while (nt < C.currentTime + 1.5) { playBar(nt); nt += BAR; }
+  }
+  function music(on) {
+    on = !!on; if (on === mOn) return; mOn = on;
+    if (on) {
+      const c = ctx(); if (!c) { mOn = false; return; }
+      mInit(c); MS.gain.cancelScheduledValues(c.currentTime); MS.gain.setTargetAtTime(MVOL, c.currentTime, .4);
+      nt = c.currentTime + .2; if (!mTimer) mTimer = setInterval(sched, 400);
+    } else if (MS && C) { MS.gain.cancelScheduledValues(C.currentTime); MS.gain.setTargetAtTime(0, C.currentTime, .25); }
+  }
   return {
+    music,
     unlock() { ctx(); },
     suspend() { try { if (C && C.state === 'running') C.suspend(); } catch (_) {} },
     resume() { try { if (C) C.resume(); } catch (_) {} },
