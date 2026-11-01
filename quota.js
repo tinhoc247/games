@@ -96,12 +96,14 @@
     if (document.hidden && c && now - c.t < HIDDEN_MS) { Q.stats.hidden++; return Promise.resolve(jsonRes(c.body)); }
     if (INF[key]) return INF[key].then(function (r) { return r.clone(); });
     var h = new Headers((init && init.headers) || {});
-    var useEtag = Q.etag && noEtag < 3;
+    /* Firebase từ chối ETag khi kèm tham số truy vấn (orderBy, startAt, limitTo...) → lỗi 400 */
+    var useEtag = Q.etag && noEtag < 3 && !info.qs;
     if (useEtag) { h.set('X-Firebase-ETag', 'true'); if (c && c.etag) h.set('If-None-Match', c.etag); }
     var init2 = Object.assign({}, init, { headers: h });
     Q.stats.req++;
     var p = nativeFetch(url, init2).then(function (res) {
       if (res.status === 304 && c) { Q.stats.etagHit++; c.t = Date.now(); return jsonRes(c.body); }
+      if (res.status === 400 && useEtag) return nativeFetch(url, init); /* phòng hờ: bị từ chối vì ETag → gửi lại như thường */
       if (!res.ok) return res;
       var et = res.headers.get('ETag');
       if (useEtag) { if (et) noEtag = 0; else noEtag++; }

@@ -146,11 +146,11 @@ function trackHtml(P, nq, me, fz) {
   const L = rankPlayers(P), rows = Math.min(4, Math.max(1, L.length));
   const items = L.map((r, i) => {
     const pct = Math.min(1, (r.pos | 0) / Math.max(1, nq)), mine = r.id === me;
-    return `<div class="rn${mine ? ' me' : ''}${fz && fz[r.id] ? ' fz' : ''}${r.fin > 0 ? ' fin' : ''}" style="left:calc(7% + ${(pct * 86).toFixed(2)}%);top:${6 + (i % rows) * (100 - 12) / rows}%" title="${esc(r.name || '')}">
+    return `<div class="rn${mine ? ' me' : ''}${fz && fz[r.id] ? ' fz' : ''}${r.fin > 0 ? ' fin' : ''}" style="left:calc(7% + ${(pct * 86).toFixed(2)}%);top:${(((i % rows) + 0.5) * 100 / rows).toFixed(2)}%" title="${esc(r.name || '')}">
       <span class="ra">${avOf(r.av)}</span>${mine ? '<b class="rl">Bạn</b>' : ''}${fz && fz[r.id] ? '<i class="ri">❄️</i>' : ''}</div>`;
   }).join('');
   const ticks = Array.from({ length: Math.max(0, nq - 1) }, (_, k) => `<s style="left:calc(7% + ${((k + 1) / nq * 86).toFixed(2)}%)"></s>`).join('');
-  return `<div class="trk"><div class="grass"></div><div class="lane"></div><div class="start">START</div><div class="finish"></div>${ticks}${items}</div>`;
+  return `<div class="trk" style="height:${Math.max(96, 8 + 30 * rows)}px"><div class="grass"></div><div class="lane"></div><div class="start">START</div><div class="finish"></div>${ticks}${items}</div>`;
 }
 
 /* ---------- Âm thanh (WebAudio, không cần file): kèn xuất phát + tiếng reo hò, âm lượng vừa phải ---------- */

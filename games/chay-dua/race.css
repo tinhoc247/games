@@ -57,17 +57,17 @@ button.alt{background:#0ea5e9;box-shadow:0 4px 0 #0369a1}button.gr{background:#1
 #hud .hr .sp{flex:1}
 #hud .pill{padding:2px 10px;border-radius:99px;background:#ffffff22;white-space:nowrap}
 .trk{position:relative;height:96px;border-radius:14px;overflow:hidden;background:#475569;border:3px solid #fff}
-.trk .grass{position:absolute;left:0;right:0;top:0;height:10px;background:#4ade80}
+.trk .grass{position:absolute;left:0;right:0;top:0;height:5px;background:#4ade80}
 .trk .lane{position:absolute;left:0;right:0;top:50%;height:4px;background:repeating-linear-gradient(90deg,#fff 0 22px,transparent 22px 44px);opacity:.5}
 .trk s{position:absolute;top:0;bottom:0;width:2px;background:#ffffff33}
 .trk .start{position:absolute;left:0;top:0;bottom:0;width:7%;background:#334155;color:#fff8;font:800 10px/1 sans-serif;display:grid;place-items:center;writing-mode:vertical-rl;letter-spacing:2px}
 .trk .finish{position:absolute;right:0;top:0;bottom:0;width:7%;background:repeating-conic-gradient(#111 0 25%,#fff 0 50%) 0 0/16px 16px;border-left:3px solid #fff}
-.rn{position:absolute;transform:translate(-50%,0);transition:left .9s cubic-bezier(.4,0,.2,1),top .6s;z-index:2;text-align:center;line-height:1}
-.rn .ra{display:block;font-size:24px;filter:drop-shadow(0 3px 2px #0006);animation:run .5s ease-in-out infinite alternate}
-.rn.me{z-index:5}.rn.me .ra{font-size:34px}
-.rn .rl{display:block;margin-top:-2px;font-size:11px;background:#f97316;color:#fff;border-radius:99px;padding:1px 6px}
+.rn{position:absolute;transform:translate(-50%,-50%);transition:left .9s cubic-bezier(.4,0,.2,1),top .6s;z-index:2;text-align:center;line-height:1}
+.rn .ra{display:block;font-size:22px;filter:drop-shadow(0 3px 2px #0006);animation:run .5s ease-in-out infinite alternate}
+.rn.me{z-index:5}.rn.me .ra{font-size:26px}
+.rn .rl{position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:3px;font-size:10px;line-height:1.2;white-space:nowrap;background:#f97316;color:#fff;border-radius:99px;padding:1px 6px}
 .rn.fin .ra{animation:none}
-.rn.fz .ra{filter:drop-shadow(0 0 6px #7dd3fc) saturate(.4);animation:none}.rn .ri{position:absolute;left:50%;top:-4px;transform:translateX(-50%);font-style:normal;font-size:20px}
+.rn.fz .ra{filter:drop-shadow(0 0 6px #7dd3fc) saturate(.4);animation:none}.rn .ri{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-style:normal;font-size:15px;pointer-events:none}
 @keyframes run{from{transform:translateY(0) rotate(-6deg)}to{transform:translateY(-4px) rotate(6deg)}}
 
 /* ---------- Câu hỏi full màn hình ---------- */
