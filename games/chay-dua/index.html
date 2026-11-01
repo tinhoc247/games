@@ -40,6 +40,7 @@
   let OFF = 0, CDX = null, frozenUntil = 0, FZ = {}, seen = new Set(), lastKey = '', TI = null, started = false, ENDED = false, power = false, joinAv = '', counting = false, hudOn = false;
   const LS = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (_) { return null; } };
   const app = $('#app');
+  window.__racePlaying = () => hudOn && !ENDED;   /* cho script tạm dừng bên dưới biết đang trong lúc chơi */
 
   function toast(t, good) {
     const d = document.createElement('div'); if (good) d.className = 'good'; d.textContent = t; $('#toast').appendChild(d);
@@ -53,7 +54,7 @@
 
   /* ---------- Màn hình vào phòng ---------- */
   function showEntry(msg) {
-    app.innerHTML = `<div class="entry"><main class="ecard"><div class="ebadge">🏁</div>
+    app.innerHTML = `<div class="entry"><main class="ecard pk"><div class="ebadge">🏁</div>
       <h2>Chạy đua</h2><p class="hint">Mã phòng: <b>${esc(CODE)}</b></p>
       <input class="fld" id="jN" maxlength="20" placeholder="Nhập tên của em" autocomplete="off">
       <p class="hint" style="margin-top:6px">Chọn nhân vật đua của em</p><div id="avs"></div>
@@ -256,7 +257,7 @@
   function drawHud() {
     if (!hudOn) return;
     const me = PL[ME] || {}; const nextP = power ? (Math.floor(okN / 3) + 1) * 3 : null;
-    $('#hud').innerHTML = `<div class="hr"><span>${avOf(me.av)} ${esc(me.name || '')}</span><span class="pill">🏁 ${pos}/${NQ} bước</span><span class="pill">✅ ${okN} đúng</span><span class="sp"></span>${nextP ? `<span class="pill">🎁 Năng lực ở câu đúng thứ ${nextP}</span>` : ''}</div>${trackHtml(Object.assign({}, PL, { [ME]: Object.assign({}, PL[ME] || {}, { pos, fin: fin > 0 ? fin : 0 }) }), NQ, ME, FZ)}`;
+    $('#hud').innerHTML = `<div class="hr"><span>${avOf(me.av)} ${esc(me.name || '')}</span><span class="pill">🏁 ${pos}/${NQ} bước</span><span class="pill">✅ ${okN} đúng</span><span class="sp"></span></div>${trackHtml(Object.assign({}, PL, { [ME]: Object.assign({}, PL[ME] || {}, { pos, fin: fin > 0 ? fin : 0 }) }), NQ, ME, FZ, true)}`;
     setHH();
   }
 
@@ -302,6 +303,59 @@
       showEntry();
     } catch (e) { showEntry(e.message); }
   })();
+})();
+</script>
+
+<script id="pause-js">
+/* Toàn màn hình khi chơi; thu nhỏ / thoát toàn màn hình / chuyển tab -> tạm dừng (giống các game khác) */
+(function(){
+var d=document,e=d.documentElement,rq=e.requestFullscreen||e.webkitRequestFullscreen,ex=d.exitFullscreen||d.webkitExitFullscreen,ov,paused=false,miss=0,noFs=false,off=false,was=false;
+var isF=function(){return !!(d.fullscreenElement||d.webkitFullscreenElement)};
+function playing(){try{return !!(window.__racePlaying&&window.__racePlaying())}catch(x){return false}}
+var fb=d.getElementById('bFs');
+function icon(){if(fb)fb.textContent=isF()?'🗗':'⛶'}
+function enter(){try{var p=rq.call(e,{navigationUI:'hide'});if(p&&p.catch)p.catch(function(){})}catch(x){}}
+if(fb&&rq){fb.onclick=function(ev){ev.stopPropagation();if(isF()){off=true;try{ex.call(d)}catch(x){}}else{off=false;enter()}};icon()}
+function onFs(){icon();if(isF())was=true;else if(was)off=true}
+d.addEventListener('fullscreenchange',onFs);d.addEventListener('webkitfullscreenchange',onFs);
+/* chạm lần đầu -> tự vào toàn màn hình (trừ khi em chủ động thoát) */
+if(rq)['pointerdown','click','keydown','touchend'].forEach(function(n){d.addEventListener(n,function(){if(!off&&!isF())enter()},true)});
+
+function mk(){
+ ov=d.createElement('div');ov.id='pzo';
+ ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(15,23,42,.96);color:#fff;text-align:center;padding:24px;font-family:inherit';
+ ov.innerHTML='<div style="font-size:76px;line-height:1">⏸️</div><div style="font-size:30px;font-weight:800">Game đang tạm dừng</div><div style="font-size:17px;opacity:.85;max-width:460px;line-height:1.45">Trò chơi cần chạy ở chế độ toàn màn hình. Bấm nút bên dưới để vào toàn màn hình và chơi tiếp nhé!</div><button type="button" id="pzb" style="margin-top:6px;padding:14px 34px;border:0;border-radius:16px;font-size:22px;font-weight:800;background:#f97316;color:#fff;cursor:pointer;box-shadow:0 5px 0 #c2410c">▶ Chơi tiếp</button>';
+ d.body.appendChild(ov);
+ ov.addEventListener('click',function(ev){ev.stopPropagation();go()});
+}
+function pause(){
+ if(paused||!playing())return;
+ if(!ov)mk();
+ paused=true;ov.style.display='flex';e.classList.add('pz-on');
+ try{if(window.Snd)Snd.suspend()}catch(x){}
+}
+function resume(){
+ if(!paused)return;
+ paused=false;miss=0;if(ov)ov.style.display='none';e.classList.remove('pz-on');
+ try{if(window.Snd)Snd.resume()}catch(x){}
+}
+function go(){
+ off=false;
+ if(!rq||isF()){resume();return}
+ try{var p=rq.call(e,{navigationUI:'hide'});if(p&&p.then)p.then(resume,function(){noFs=true;resume()});else resume()}catch(x){noFs=true;resume()}
+}
+var st=d.createElement('style');st.textContent='html.pz-on *{animation-play-state:paused!important}';d.head.appendChild(st);
+d.addEventListener('visibilitychange',function(){if(d.hidden)pause()});
+window.addEventListener('pagehide',pause);
+function chk(){
+ if(!rq||noFs||paused||!playing()){miss=0;return}
+ if(isF()){miss=0;return}
+ if(++miss>=2)pause()
+}
+d.addEventListener('fullscreenchange',function(){if(!isF())chk()});
+d.addEventListener('webkitfullscreenchange',function(){if(!isF())chk()});
+setInterval(chk,700);
+['keydown','keyup','keypress'].forEach(function(n){window.addEventListener(n,function(ev){if(paused){ev.stopImmediatePropagation();ev.preventDefault()}},true)});
 })();
 </script>
 </body>

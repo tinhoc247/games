@@ -64,7 +64,7 @@ button.alt{background:#0ea5e9;box-shadow:0 4px 0 #0369a1}button.gr{background:#1
 .trk .finish{position:absolute;right:0;top:0;bottom:0;width:7%;background:repeating-conic-gradient(#111 0 25%,#fff 0 50%) 0 0/16px 16px;border-left:3px solid #fff}
 .rn{position:absolute;transform:translate(-50%,-50%);transition:left .9s cubic-bezier(.4,0,.2,1),top .6s;z-index:2;text-align:center;line-height:1}
 .rn .ra{display:block;font-size:22px;filter:drop-shadow(0 3px 2px #0006);animation:run .5s ease-in-out infinite alternate}
-.rn.me{z-index:5}.rn.me .ra{font-size:26px}
+.rn.me{z-index:5}.rn.me .ra{font-size:30px}
 .rn .rl{position:absolute;left:100%;top:50%;transform:translateY(-50%);margin-left:3px;font-size:10px;line-height:1.2;white-space:nowrap;background:#f97316;color:#fff;border-radius:99px;padding:1px 6px}
 .rn.fin .ra{animation:none}
 .rn.fz .ra{filter:drop-shadow(0 0 6px #7dd3fc) saturate(.4);animation:none}.rn .ri{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-style:normal;font-size:15px;pointer-events:none}
@@ -72,7 +72,7 @@ button.alt{background:#0ea5e9;box-shadow:0 4px 0 #0369a1}button.gr{background:#1
 
 /* ---------- Câu hỏi full màn hình ---------- */
 #modal{position:fixed;left:0;right:0;bottom:0;top:var(--hh);z-index:20;display:none;background:rgba(255,255,255,.6);align-items:stretch;justify-content:center;padding:0}
-#modal .box{width:100%;max-width:1000px;height:100%;max-height:none;overflow:auto;border-radius:0;padding:clamp(12px,2.6vw,28px);background:rgba(255,255,255,.96);color:#1f2937;box-shadow:none;text-align:center;font-size:clamp(17px,2.2vw,24px);--card:#fff;--ink:#1f2937;--mut:#4b5563;--line:#e5e7eb;--okc:#15803d;--badc:#b91c1c}
+#modal .box{width:100%;max-width:1320px;height:100%;max-height:none;overflow:auto;border-radius:0;padding:clamp(12px,2.6vw,28px);background:rgba(255,255,255,.96);color:#1f2937;box-shadow:none;text-align:center;font-size:clamp(17px,2.2vw,24px);--card:#fff;--ink:#1f2937;--mut:#4b5563;--line:#e5e7eb;--okc:#15803d;--badc:#b91c1c}
 #modal .box h3{font-size:clamp(22px,3.4vw,36px);margin:8px 0 14px;line-height:1.3}
 #modal .opt{font-size:clamp(18px,2.4vw,26px);padding:clamp(12px,2vh,20px) 18px;margin:clamp(6px,1.2vh,12px) 0;border-radius:16px}
 #modal button.go,#modal #chk,#modal .box>button,#fb button{font-size:clamp(18px,2.2vw,24px);padding:12px 26px}
@@ -109,3 +109,23 @@ button.alt{background:#0ea5e9;box-shadow:0 4px 0 #0369a1}button.gr{background:#1
 .mine{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0}.mine .pill2{padding:6px 12px;border-radius:99px;background:#fef3c7;font-weight:800}
 
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important}}
+
+/* Ẩn các ghi chú phụ trên đường đua: nhãn "Bạn" và chữ START */
+.trk .rl{display:none}
+.trk .start{font-size:0;color:transparent}
+/* Đường chạy cá nhân chỉ có 1 làn: thu gọn thanh trên cùng để dành chỗ cho câu hỏi */
+#hud{padding:6px 10px 5px}
+#hud .hr{margin-bottom:4px}
+#modal .box{padding-top:clamp(10px,2vw,22px)}
+
+/* Cửa sổ chọn nhân vật: gọn, vừa màn hình; lưới nhân vật cuộn riêng, nút "Vào đường đua" luôn thấy */
+.entry:has(.ecard.pk){min-height:100vh;min-height:100dvh;padding:8px 10px}
+.ecard.pk{display:flex;flex-direction:column;max-width:620px;margin-top:40px;padding:42px 16px 14px;max-height:calc(100vh - 56px);max-height:calc(100dvh - 56px)}
+.ecard.pk .ebadge{width:64px;height:64px;margin-left:-32px;top:-32px;font-size:34px}
+.ecard.pk h2{font-size:22px;flex:none}
+.ecard.pk .hint,.ecard.pk .fld,.ecard.pk .err,.ecard.pk>button{flex:none}
+.ecard.pk .fld{padding:9px 12px;font-size:16px;margin:4px 0}
+.ecard.pk .err{margin:2px 0;font-size:14px}
+.ecard.pk #avs{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px;padding:5px;margin:6px 0;-webkit-overflow-scrolling:touch}
+.ecard.pk .avb{width:100%;height:auto;aspect-ratio:1/1;margin:0;font-size:24px}
+.ecard.pk>button{padding:11px;font-size:18px}

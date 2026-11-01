@@ -142,15 +142,15 @@ function sumHtml(P, LG, QS, nq, me) {
 }
 
 /* ---------- Đường đua (thanh tiến độ). opt: {me, nq, frozen:{id:true}} ---------- */
-function trackHtml(P, nq, me, fz) {
-  const L = rankPlayers(P), rows = Math.min(4, Math.max(1, L.length));
+function trackHtml(P, nq, me, fz, onlyMe) {
+  const L = rankPlayers(P).filter(r => !onlyMe || r.id === me), rows = Math.min(4, Math.max(1, L.length));
   const items = L.map((r, i) => {
     const pct = Math.min(1, (r.pos | 0) / Math.max(1, nq)), mine = r.id === me;
     return `<div class="rn${mine ? ' me' : ''}${fz && fz[r.id] ? ' fz' : ''}${r.fin > 0 ? ' fin' : ''}" style="left:calc(7% + ${(pct * 86).toFixed(2)}%);top:${(((i % rows) + 0.5) * 100 / rows).toFixed(2)}%" title="${esc(r.name || '')}">
       <span class="ra">${avOf(r.av)}</span>${mine ? '<b class="rl">Bạn</b>' : ''}${fz && fz[r.id] ? '<i class="ri">❄️</i>' : ''}</div>`;
   }).join('');
   const ticks = Array.from({ length: Math.max(0, nq - 1) }, (_, k) => `<s style="left:calc(7% + ${((k + 1) / nq * 86).toFixed(2)}%)"></s>`).join('');
-  return `<div class="trk" style="height:${Math.max(96, 8 + 30 * rows)}px"><div class="grass"></div><div class="lane"></div><div class="start">START</div><div class="finish"></div>${ticks}${items}</div>`;
+  return `<div class="trk" style="height:${onlyMe ? 52 : Math.max(96, 8 + 30 * rows)}px"><div class="grass"></div><div class="lane"></div><div class="start">START</div><div class="finish"></div>${ticks}${items}</div>`;
 }
 
 /* ---------- Âm thanh (WebAudio, không cần file): kèn xuất phát + tiếng reo hò, âm lượng vừa phải ---------- */
@@ -184,9 +184,8 @@ const Snd = (() => {
   }
   /* Tiếng kèn xuất phát: ta-ta-ta-TAAA */
   function horn() {
-    tone(523.25, 0, .22, 'sawtooth', .10, 1800); tone(523.25, .27, .22, 'sawtooth', .10, 1800);
-    tone(523.25, .54, .22, 'sawtooth', .10, 1800); tone(784, .82, 1.1, 'sawtooth', .12, 2000, true);
-    tone(392, .82, 1.1, 'triangle', .07, 1200);
+    tone(523.25, 0, .14, 'sawtooth', .10, 1800); tone(523.25, .17, .14, 'sawtooth', .10, 1800);
+    tone(784, .34, .45, 'sawtooth', .12, 2000, true); tone(392, .34, .45, 'triangle', .07, 1200);
   }
   /* Tiếng reo hò của khán giả: nhiễu lọc băng thông, nhấp nhô nhẹ, nhỏ dần */
   function cheer(dur, vol) {
@@ -204,16 +203,18 @@ const Snd = (() => {
   }
   return {
     unlock() { ctx(); },
+    suspend() { try { if (C && C.state === 'running') C.suspend(); } catch (_) {} },
+    resume() { try { if (C) C.resume(); } catch (_) {} },
     horn, cheer,
-    start() { horn(); setTimeout(() => cheer(3, .08), 700); },
+    start() { horn(); setTimeout(() => cheer(1.4, .09), 300); },
     beep() { tone(660, 0, .16, 'square', .05, 1600); },
-    go() { horn(); setTimeout(() => cheer(3, .08), 700); },
-    step() { tone(660, 0, .09, 'triangle', .07); tone(880, .09, .12, 'triangle', .07); cheer(.9, .035); },
+    go() { horn(); setTimeout(() => cheer(1.4, .09), 300); },
+    step() { tone(660, 0, .08, 'triangle', .07); tone(880, .08, .10, 'triangle', .07); cheer(.8, .11); },
     bad() { tone(220, 0, .22, 'triangle', .07); },
     power() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .08, .14, 'triangle', .07)); },
     freeze() { [1200, 900, 700, 500].forEach((f, i) => tone(f, i * .07, .14, 'sine', .07)); },
     back() { tone(392, 0, .16, 'triangle', .08); tone(262, .15, .26, 'triangle', .08); },
-    win() { horn(); setTimeout(() => cheer(4, .095), 300); },
+    win() { horn(); setTimeout(() => cheer(1.8, .11), 250); },
     get mute() { return mute; },
     toggle() { mute = !mute; try { localStorage.setItem('raceMute', mute ? '1' : '0'); } catch (_) {} if (M) M.gain.value = mute ? 0 : .8; ctx(); return mute; }
   };
