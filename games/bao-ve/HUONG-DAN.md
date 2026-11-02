@@ -73,3 +73,13 @@ Luật bổ sung đã thêm: 🔥 combo 3 câu đúng liên tiếp thưởng g�
 
 ## Cập nhật bản 8
 - **Bỏ các phần thưởng thêm:** không còn 🔥 combo (gấp đôi), 🎯 hoàn 1 kiếm khi đánh trúng, 🧱 gia cố thành +2 khiên. Mỗi câu đúng chỉ được +1 khiên hoặc +1 kiếm; mỗi đòn tấn công trừ 1 kiếm. (Các mục "Luật bổ sung" ở phần cũ của file này không còn áp dụng.) Ô "Chuỗi đúng" cũng được bỏ khỏi màn hình.
+
+## Cập nhật bản 9 – luật kết thúc & trốn thoát
+- **Kết thúc trận:** chỉ khi **hết giờ** hoặc **admin bấm ⏹ Kết thúc** (không còn tự kết thúc khi chỉ còn 1 vương quốc).
+- **Bị bắt:** người bị bắt thấy hộp thông báo cơ hội về thành – trả lời đúng **3 câu** (`ESCN`) thì tự thoát về thành và chơi tiếp.
+- **Đội đang giữ người** (và đội của người đó) nhận thông báo "đã trốn thoát".
+- **Vương quốc sụp đổ** (hết người trong thành) vẫn có thể hồi sinh: thành viên bị giam trả lời đúng 3 câu hoặc được cứu thì đội hoạt động lại.
+- **Xếp hạng:** theo **tổng = thành viên trong thành + tù binh đang giữ** (hòa thì xét số người trong thành, rồi khiên+kiếm). Bảng có thêm cột **Tổng**.
+
+## Font chung
+Tất cả game dùng chung font **Be Vietnam Pro** trong thư mục `fonts/` ở gốc (file `fonts/vn-font.css`). Khi đưa lên hosting phải đưa cả thư mục `fonts` cùng cấp với `games/`. Muốn đổi font cho mọi game thì sửa `fonts/vn-font.css`.

@@ -275,7 +275,7 @@ button.vkb{all:unset;box-sizing:border-box;position:absolute;right:8px;top:50%;t
 .sb tr{transition:background-color .25s}.ch{transition:opacity .4s,filter .4s,transform .3s}.ch.gone,.ch.pr{animation:pgIn .45s ease-out both}
 .bigq,.bigx,.acts button{transition:transform .12s,box-shadow .12s,filter .18s,background-color .2s}.bigx:not(:disabled):active,.bigq:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.25)}}
 </style>
-<style id="v2-css">.sb .tm{display:inline-flex;align-items:center;gap:4px;margin:2px 6px 2px 0;padding:2px 9px 2px 3px;border-radius:999px;background:rgba(0,0,0,.06);vertical-align:middle}.sb .tm.gone{filter:none;opacity:.6;background:rgba(239,68,68,.14)}.tmn{font-size:13px;font-weight:700;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tm.gone .tmn{text-decoration:line-through}.tm .avs{flex:0 0 auto}.tm.gone .avs{filter:grayscale(1)}.fullnote{margin:8px 0;padding:10px 12px;border-radius:12px;background:#fef3c7;color:#78350f;font-weight:700;text-align:center}.pbar{display:flex;gap:6px;justify-content:center;margin:8px 0}.pbar i{width:34px;height:12px;border-radius:6px;background:#cbd5e1}.pbar i.on{background:#22c55e}</style><style id="v3-css">.tms{font-size:11px;font-weight:700;opacity:.75;white-space:nowrap}</style></head><body><div class="wrap" id="app"></div><div id="toast"></div><div id="modal"><div class="box" id="mbox"></div></div><script>
+<style id="v2-css">.sb .tm{display:inline-flex;align-items:center;gap:4px;margin:2px 6px 2px 0;padding:2px 9px 2px 3px;border-radius:999px;background:rgba(0,0,0,.06);vertical-align:middle}.sb .tm.gone{filter:none;opacity:.6;background:rgba(239,68,68,.14)}.tmn{font-size:13px;font-weight:700;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tm.gone .tmn{text-decoration:line-through}.tm .avs{flex:0 0 auto}.tm.gone .avs{filter:grayscale(1)}.fullnote{margin:8px 0;padding:10px 12px;border-radius:12px;background:#fef3c7;color:#78350f;font-weight:700;text-align:center}.pbar{display:flex;gap:6px;justify-content:center;margin:8px 0}.pbar i{width:34px;height:12px;border-radius:6px;background:#cbd5e1}.pbar i.on{background:#22c55e}</style><style id="v3-css">.tms{font-size:11px;font-weight:700;opacity:.75;white-space:nowrap}</style><link rel="stylesheet" href="../../fonts/vn-font.css"></head><body><div class="wrap" id="app"></div><div id="toast"></div><div id="modal"><div class="box" id="mbox"></div></div><script>
 
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const CFG=window.FBCFG,ADM=window.APPMODE=='admin';let TOK=null,RT=null,ME=null,ADMPW=null,OFF=0,busy=false,DRG=-1,SK=0,CQ=null,CB=null,RCB=null,IU=null,DQ=null,H=[],ST={ok:0,bad:0},T=[{name:''}],cur=0,Q=[],CUR=[],RAW=null;const IM={},HW={on:false};
@@ -587,19 +587,19 @@ function replay(S_,mv){const L=TEAML(S_),TS={},loc={},home={},log=[],ec={};let o
  L.forEach(t=>{TS[t.id]={id:t.id,def:0,atk:0,out:false};t.m.forEach(p=>{home[p]=t.id;loc[p]=t.id})});
  const ids=Object.keys(home).sort(),castle=t=>ids.filter(p=>home[p]==t&&loc[p]==t),jail=t=>ids.filter(p=>loc[p]==t&&home[p]!=t),alive=()=>L.filter(t=>!TS[t.id].out);
  /* Khiên/kiếm là của CẢ ĐỘI (tối đa MAXV mỗi loại); mỗi người trả lời đúng thì cộng vào kho chung */
- for(const[k,v]of mv){if(over)break;if(!v||typeof v!='object')continue;const A=home[v.p];if(!A||TS[A].out)continue;const a=TS[A];
+ for(const[k,v]of mv){if(over)break;if(!v||typeof v!='object')continue;const A=home[v.p];if(!A||(TS[A].out&&v.k!='c'))continue;const a=TS[A];
   if(v.k=='d'||v.k=='a'){const n=v.n==2?2:1,f=v.k=='d'?'def':'atk',o0=a[f];a[f]=Math.min(MAXV,a[f]+n);log.push({key:k,kind:v.k,A,p:v.p,n:a[f]-o0});continue}
-  if(v.k=='c'){if(loc[v.p]!=A){ec[v.p]=(ec[v.p]|0)+1;if(ec[v.p]>=ESCN){const J=loc[v.p];loc[v.p]=A;ec[v.p]=0;log.push({key:k,kind:'esc',A,B:J,p:v.p,q:v.p})}}continue}
+  if(v.k=='c'){if(loc[v.p]!=A){ec[v.p]=(ec[v.p]|0)+1;if(ec[v.p]>=ESCN){const J=loc[v.p];loc[v.p]=A;ec[v.p]=0;TS[A].out=false;log.push({key:k,kind:'esc',A,B:J,p:v.p,q:v.p})}}continue}
   if(v.k!='x')continue;const to=v.to,b=TS[to];if(!b||b.out||to==A||a.atk<1)continue;
   const r=hs(k),jl=jail(to),cs=castle(to);if(b.def<=0&&!jl.length&&!cs.length)continue;
   a.atk--;const e={key:k,kind:'block',A,B:to,p:v.p};
   if(b.def>0)b.def--;
-  else if(jl.length){const q=jl.includes(v.q)?v.q:jl[r%jl.length];loc[q]=home[q];ec[q]=0;e.kind='free';e.q=q}
+  else if(jl.length){const q=jl.includes(v.q)?v.q:jl[r%jl.length];loc[q]=home[q];ec[q]=0;TS[home[q]].out=false;e.kind='free';e.q=q}
   else{const q=cs.includes(v.q)?v.q:cs[r%cs.length];loc[q]=A;ec[q]=0;e.kind='cap';e.q=q;
-   if(!castle(to).length){b.out=true;b.def=0;jail(to).forEach(z=>{loc[z]=home[z];ec[z]=0});e.kind='fall'}}
-  log.push(e);if(alive().length<=1)over=true}
+   if(!castle(to).length){b.out=true;b.def=0;b.atk=0;jail(to).forEach(z=>{loc[z]=home[z];ec[z]=0;TS[home[z]].out=false});e.kind='fall'}}
+  log.push(e)}
  return{TS,loc,home,log,over,teams:L,ids,castle,jail,esc:ec}}
-function rankT(R){return R.teams.map(t=>({t,s:R.TS[t.id],c:R.castle(t.id).length,j:R.jail(t.id).length})).sort((a,b)=>(a.s.out-b.s.out)||(b.c-a.c)||(b.j-a.j)||((b.s.def+b.s.atk)-(a.s.def+a.s.atk))||(a.t.id<b.t.id?-1:1))}
+function rankT(R){return R.teams.map(t=>({t,s:R.TS[t.id],c:R.castle(t.id).length,j:R.jail(t.id).length})).sort((a,b)=>((b.c+b.j)-(a.c+a.j))||(b.c-a.c)||((b.s.def+b.s.atk)-(a.s.def+a.s.atk))||(a.t.id<b.t.id?-1:1))}
 /* Nhật ký hành động trên Firebase */
 let MV=new Map(),LASTK='',MVC='';
 async function fbQ(p,qs,again){if(!TOK)await fbAuth();const r=await fetch(CFG.databaseURL.replace(/\/$/,'')+'/'+p+'.json?auth='+TOK+(qs?'&'+qs:''));
@@ -616,11 +616,11 @@ function evText(e,S_,P){const T=S_.teams||{},tn=id=>T[id]?T[id].em+' <b>'+esc(T[
  if(e.kind=='fall')return `🏴 ${tn(e.B)} đã sụp đổ! ${pn(e.q)} bị ${tn(e.A)} bắt.`;
   if(e.kind=='esc')return `🏃 ${pn(e.q)} của ${tn(e.A)} đã trốn thoát khỏi ${tn(e.B)}!`;return ''}
 function teamRows(S_,R,P,me){return rankT(R).map((r,i)=>{const t=r.t,mem=t.m.map(p=>{const inC=R.loc[p]==t.id;return `<span class="tm${inC?'':' gone'}" title="${esc((P[p]||{}).name||'')}${inC?'':' (bị giam)'}">${avH((P[p]||{}).av,'26px')}<small class="tmn">${inC?'':'⛓️ '}${esc((P[p]||{}).name||'…')}</small></span>`}).join('');
-  return `<tr class="${t.id==me?'mine':''}${r.s.out?' dead':''}"><td>${RANK_MD[i]||i+1}</td><td><span style="color:${t.col};font-weight:800">${t.em} ${esc(t.name)}</span><div>${mem}</div></td><td>👥 ${r.c}</td><td>⛓️ ${r.j}</td><td>🛡️${r.s.def} ⚔️${r.s.atk}</td><td>${r.s.out?'💀':'🟢'}</td></tr>`}).join('')}
-const TEAMHEAD='<tr><th>#</th><th>Vương quốc</th><th title="Nhân vật còn trong thành">Thành</th><th title="Tù binh đang giam">Giam</th><th>Lượt</th><th></th></tr>';
+  return `<tr class="${t.id==me?'mine':''}${r.s.out?' dead':''}"><td>${RANK_MD[i]||i+1}</td><td><span style="color:${t.col};font-weight:800">${t.em} ${esc(t.name)}</span><div>${mem}</div></td><td>👥 ${r.c}</td><td>⛓️ ${r.j}</td><td><b>${r.c+r.j}</b></td><td>🛡️${r.s.def} ⚔️${r.s.atk}</td><td>${r.s.out?'💀':'🟢'}</td></tr>`}).join('')}
+const TEAMHEAD='<tr><th>#</th><th>Vương quốc</th><th title="Nhân vật còn trong thành">Thành</th><th title="Tù binh đang giam">Giam</th><th title="Thành viên trong thành + tù binh">Tổng</th><th>Lượt</th><th></th></tr>';
 const ENDWHY=(S_,R_)=>R_&&R_.over?'over':(S_&&S_.status=='ended'&&now()<(S_.end||0)-1500?'admin':'time');
 function sumK(S_,P,LG,Qs,me,R){const rk=rankT(R),w=rk[0],mine=R.home[me],mr=rk.findIndex(r=>r.t.id==mine),hard=(()=>{const x={};Object.values(LG||{}).forEach(a=>(a||[]).forEach(z=>{const r=x[z.i]=x[z.i]||{n:0,w:0};r.n++;if(!z.o)r.w++}));return Object.entries(x).map(([i,r])=>({i:+i,...r,p:Math.round(r.w*100/r.n)})).filter(r=>r.w>0).sort((a,b)=>b.w-a.w||b.p-a.p).slice(0,5)})(),L=ordT(P);
- return `<div class="big">${{over:'🏆',admin:'⏹️',time:'⏰'}[ENDWHY(S_,R)]}</div><h2>${{over:'Trận đấu kết thúc – còn một vương quốc đứng vững!',admin:'Admin đã kết thúc trận đấu',time:'Hết giờ!'}[ENDWHY(S_,R)]}</h2><div class="winb" style="border-color:${w.t.col}"><div style="font-size:54px">${w.t.em}</div><b style="font-size:22px">${esc(w.t.name)}</b><div>${R.over?'🏆 Vô địch':'🥇 Xếp nhất'} · 👥 ${w.c} nhân vật trong thành · ⛓️ ${w.j} tù binh</div></div>${mr>=0&&me?`<p style="font-size:18px">Đội của em: <b>${esc(mine&&S_.teams[mine].name)}</b> – hạng <b>${mr+1}/${rk.length}</b></p>`:''}
+ return `<div class="big">${{over:'🏆',admin:'⏹️',time:'⏰'}[ENDWHY(S_,R)]}</div><h2>${{over:'Trận đấu kết thúc – còn một vương quốc đứng vững!',admin:'Admin đã kết thúc trận đấu',time:'Hết giờ!'}[ENDWHY(S_,R)]}</h2><div class="winb" style="border-color:${w.t.col}"><div style="font-size:54px">${w.t.em}</div><b style="font-size:22px">${esc(w.t.name)}</b><div>${R.over?'🏆 Vô địch':'🥇 Xếp nhất'} · 👥 ${w.c} nhân vật trong thành · ⛓️ ${w.j} tù binh · Tổng <b>${w.c+w.j}</b></div></div>${mr>=0&&me?`<p style="font-size:18px">Đội của em: <b>${esc(mine&&S_.teams[mine].name)}</b> – hạng <b>${mr+1}/${rk.length}</b></p>`:''}
  <h3>🏰 Bảng xếp hạng vương quốc</h3><table class="sb">${TEAMHEAD}${teamRows(S_,R,P,mine)}</table>
  <h3>⭐ Cá nhân (số câu đúng)</h3><table class="sb"><tr><th>#</th><th>Người chơi</th><th>Đội</th><th>Đúng</th></tr>${L.map((r,i)=>{const t=(r.ok|0)+(r.bad|0),tt=S_.teams&&S_.teams[R.home[r.id]];return `<tr style="${r.id==me?'background:rgba(249,115,22,.22);font-weight:800':''}"><td>${RANK_MD[i]||i+1}</td><td>${avH(r.av)} ${esc(r.name||'')}</td><td>${tt?tt.em:''}</td><td>${r.ok|0}/${t} (${t?Math.round((r.ok|0)*100/t):0}%)</td></tr>`}).join('')}</table>
  <h3>❗ Câu hỏi cần lưu ý (sai nhiều)</h3>${hard.length?hard.map(x=>`<div style="text-align:left;margin:8px 0"><div><b>Câu ${x.i+1}.</b> ${esc(((Qs[x.i]||{}).q||'').slice(0,160))}</div><div class="bar" style="width:${Math.max(4,x.p)}%"></div><span class="hint">Sai ${x.w}/${x.n} lượt (${x.p}%)</span></div>`).join(''):'<p class="hint">Chưa có câu nào bị sai.</p>'}`}
@@ -632,9 +632,10 @@ const RULES_HTML=`<div style="text-align:left;line-height:1.5"><h3 style="text-a
 <li>⚔️ Đội còn ít nhất 1 kiếm thì <b>bất kỳ bạn nào cũng được Tấn công bất cứ lúc nào</b> (kể cả khi đang làm câu hỏi): chọn một vương quốc khác, rồi chọn đúng <b>tên người chơi</b> muốn bắt. Mỗi lần tấn công mất 1 kiếm của đội.</li>
 <li>🛡️ Bị tấn công mà còn phòng thủ: mất 1 khiên, không ai bị bắt.</li>
 <li>💥 Bị tấn công mà phòng thủ = 0: nếu đội đó đang giữ <b>tù binh</b> thì tù binh được <b>giải cứu trước</b> (em chọn người muốn cứu, họ về lại thành của họ); hết tù binh mới bắt người em đã chọn đem về nhà giam.</li>
-<li>💀 Đội bị bắt hết nhân vật sẽ <b>thua</b>. Đội cuối cùng còn đứng vững thắng. Hết giờ thì xếp hạng theo số nhân vật còn trong thành, rồi số tù binh.</li>
+<li>💀 Đội bị bắt hết nhân vật trong thành thì <b>sụp đổ</b>, nhưng người bị giam vẫn có thể trốn thoát để hồi sinh vương quốc.</li>
+<li>⏰ Trận đấu chỉ kết thúc khi <b>hết giờ</b> hoặc <b>admin kết thúc</b>. Xếp hạng theo <b>tổng số thành viên (trong thành) + tù binh</b> đang giữ.</li>
 </ul><b>✨ Luật bổ sung:</b><ul style="padding-left:18px;margin:6px 0">
-<li>🏃 <b>Trốn thoát:</b> bạn bị bắt có cơ hội tự thoát – trả lời đúng <b>3 câu</b> (tính từ lần trả lời đầu của mỗi câu) là được về lại thành. Đồng đội cũng có thể tấn công để cứu em!</li>
+<li>🏃 <b>Trốn thoát:</b> bạn bị bắt có cơ hội tự thoát – trả lời đúng <b>3 câu</b> (tính từ lần trả lời đầu của mỗi câu) là tự thoát về thành và tiếp tục chơi. Đội đang giữ em sẽ được báo là em đã trốn thoát. Đồng đội cũng có thể tấn công để cứu em!</li>
 </ul></div><button onclick="close_()" style="width:100%">Đã hiểu ▶</button>`;
 
 const TSV=()=>2,INV=()=>0;
