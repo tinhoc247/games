@@ -125,7 +125,7 @@
       }
     },
     {
-      id: 'doi-vang', name: 'Đổi Vàng', icon: '🪙', tone: '#C98A00',
+      id: 'doi-vang', name: 'Đổi Vàng', icon: '💰', tone: '#C98A00',
       blurb: 'Trả lời đúng để nhận vàng, mở rương và đổi quà. Mỗi bạn một nhân vật.',
       dir: 'games/doi-vang/', ns: 'gold/', fallback: true,
       match: k => !k.ts && !k.ini,
