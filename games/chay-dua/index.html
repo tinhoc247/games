@@ -121,7 +121,7 @@
       const [s, p0, ev] = await Promise.all([fb(G('sessions/' + CODE)), needP ? fb(G('players/' + CODE)) : null, fbEvents(CODE, lastKey)]);
       if (p0) { window.PLR = p0; window.LPL = Date.now(); }
       const p = p0 || window.PLR;
-      if (!s) { ticking = false; return gone('Phòng đã bị xoá.'); }
+      if (!s) { ticking = false; if (ENDED) { clearInterval(TI); return; } return gone('Phòng đã bị xoá.'); }
       S = s; PL = p || {};
       if (!PL[ME]) { ticking = false; return gone('Em đã được mời ra khỏi phòng.'); }
       Object.keys(ev).sort().forEach(k => { if (seen.has(k)) return; seen.add(k); lastKey = k; onEvent(ev[k]); });

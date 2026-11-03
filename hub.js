@@ -510,6 +510,7 @@
     /* Hết phiên của Đổi Vàng / Bảo vệ thì dọn luôn gold/ts (mỗi học sinh 1 mục giờ máy chủ, không gắn với mã) */
     if (g.ns === 'gold/') { try { const left = await fb('gold/sessions', 'GET', undefined, 'shallow=true'); if (!left || !Object.keys(left).length) await cleanTs(); } catch (_) {} }
   }
+
   /* Dọn gold/ts: an toàn, học sinh đang chơi chỉ ghi lại mục này khi vào phòng/nối lại. */
   async function cleanTs() {
     if (!S.admin) throw Error('Cần đăng nhập admin.');

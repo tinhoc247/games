@@ -88,7 +88,7 @@ h1{margin:0 0 18px;font:800 36px/1.15 var(--f-h);background:linear-gradient(90de
     btn.disabled=true;say('Đang tìm game…');
     try{
       const r=await Hub.resolve(c);
-      if(!r){btn.disabled=false;return bad('Chưa có game nào dùng mã này. Em kiểm tra lại mã thầy cô đưa.')}
+      if(!r){btn.disabled=false;return bad('Mã này không đúng hoặc đã kết thúc (mã đã kết thúc sẽ bị xoá và không dùng lại được). Em kiểm tra lại mã thầy cô đưa nhé.')}
       say('Đang vào '+r.game.name+'…');
       location.replace(r.url);
     }catch(e){

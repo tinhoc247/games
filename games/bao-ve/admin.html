@@ -439,7 +439,7 @@ async function kickAsk(id,el){const p=(window.CP||{})[id];if(!window.CS||CS.stat
   await Promise.all(['players','logs','events'].map(k=>fb(G(k+'/'+CODE+'/'+id),'DELETE')));
   delete window.CP[id];window.CDRAW&&CDRAW()}catch(e){if(el)el.title='⚠️ Không loại được: '+e.message}}
 async function addMin(){await fb(G('sessions/'+CODE),'PATCH',{end:{'.sv':{increment:60000}},extra:{'.sv':{increment:1}}})}
-async function endNow(){if(confirm('Kết thúc game ngay?'))await fb(G('sessions/'+CODE),'PATCH',{status:'ended'})}
+async function endNow(){if(confirm('Kết thúc game ngay?'))await fb(G('sessions/'+CODE),'PATCH',{status:'ended',endedAt:{'.sv':'timestamp'}})}
 /* ===== Thư viện bộ câu hỏi (lưu trên Firebase: lib = thông tin, libq = câu hỏi, libimg = ảnh) ===== */
 let LIB=[],CURLIB=null;
 async function libList(){const L=(await fb(('lib')))||{};return Object.entries(L).map(([id,v])=>({id,...v})).sort((a,b)=>(b.created|0)-(a.created|0))}
@@ -659,7 +659,7 @@ async function ctl(code){if(!code)return;CODE=code;clearInterval(CT);let first=t
   const run=s.status=='running',R0=Object.entries(P).map(([id,v])=>({id,...v}));let R=null,mvErr='';
   if(s.teams){try{await mvPoll(code)}catch(e){mvErr=e.message}R=replay(s,mvList())}
   const end=s.status=='ended'||(run&&now()>=s.end)||!!(R&&R.over);
-  if(end&&s.status!='ended'&&window.ENDW!=code){window.ENDW=code;fb(G('sessions/'+code),'PATCH',{status:'ended'}).catch(()=>{})}
+  if(end&&s.status!='ended'&&window.ENDW!=code){window.ENDW=code;fb(G('sessions/'+code),'PATCH',{status:'ended',endedAt:{'.sv':'timestamp'}}).catch(()=>{})}
   const cv={ini:($('#ini')||{}).value,dur:($('#dur')||{}).value,tsz:($('#tsz')||{}).value};let body;
   if(end){clearInterval(CT);try{L=(await fb(G('logs/'+code)))||{};QL=QL||await qLoad(code)}catch(e){L={};QL=QL||[]}
    body=R?`<div class="resw">${sumK(s,P,L,QL,null,R)}</div>`:'<h2>Kết thúc</h2>';body+=`<div class="row" style="justify-content:center"><button onclick="rep('${code}')">📊 Báo cáo đầy đủ</button></div>`}

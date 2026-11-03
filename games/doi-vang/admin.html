@@ -419,7 +419,7 @@ async function kickAsk(id,el){const p=(window.CP||{})[id];if(!window.CS||CS.stat
   delete window.CP[id];window.CDRAW&&CDRAW()}catch(e){if(el)el.title='⚠️ Không loại được: '+e.message}}
 async function startG(){const d=Math.max(1,+$('#dur').value||15),t=now();await fb(G('sessions/'+CODE),'PATCH',{status:'running',dur:d,start:t,end:t+d*60000})}
 async function addMin(){await fb(G('sessions/'+CODE),'PATCH',{end:{'.sv':{increment:60000}},extra:{'.sv':{increment:1}}})}
-async function endNow(){if(confirm('Kết thúc game ngay?'))await fb(G('sessions/'+CODE),'PATCH',{status:'ended'})}
+async function endNow(){if(confirm('Kết thúc game ngay?'))await fb(G('sessions/'+CODE),'PATCH',{status:'ended',endedAt:{'.sv':'timestamp'}})}
 /* ===== Thư viện bộ câu hỏi (lưu trên Firebase: lib = thông tin, libq = câu hỏi, libimg = ảnh) ===== */
 let LIB=[],CURLIB=null;
 async function libList(){const L=(await fb(('lib')))||{};return Object.entries(L).map(([id,v])=>({id,...v})).sort((a,b)=>(b.created|0)-(a.created|0))}

@@ -77,6 +77,12 @@ if (P) { /* đăng nhập Firebase bằng P, rồi nếu có ?ctl=MÃ thì mở 
 
 Nếu game mới dùng vùng Firebase riêng, nhớ thêm Rules cho vùng đó như các game hiện tại.
 
+## Kết thúc lượt chơi
+
+- Khi một lượt kết thúc (thầy cô bấm Kết thúc, hết giờ, hoặc có người về đích ở Chạy đua), mã **không dùng lại được nữa**: học sinh nhập mã sẽ bị từ chối.
+- **Báo cáo của lượt chơi được giữ lại cho đến khi admin xoá** (nút 🗑 trong 📊 Báo cáo trên dashboard). Không có gì tự xoá.
+- Học sinh đang ở màn hình kết quả không bị đẩy ra khi thầy cô xoá lượt.
+
 ## Giữ Firebase không quá tải (quota)
 
 Gói Spark của Firebase giới hạn **10 GB tải xuống / tháng**. Các game hỏi Firebase liên tục (mỗi vài giây), nên đã có `quota.js` (nạp đầu mọi trang) và vài chỉnh sửa tần suất:
