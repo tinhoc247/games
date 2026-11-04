@@ -21,10 +21,21 @@
   /* ---------- Firebase (REST, giống cách 3 game đang dùng) ---------- */
   function authError(m) {
     if (/INVALID_PASSWORD|INVALID_LOGIN_CREDENTIALS|EMAIL_NOT_FOUND/.test(m || '')) return 'Mật khẩu chưa đúng.';
-    if (/TOO_MANY_ATTEMPTS/.test(m || '')) return 'Nhập sai nhiều lần. Chờ vài phút rồi thử lại.';
+    if (/TOO_MANY_ATTEMPTS/.test(m || '')) return S.admin ? 'Nhập sai nhiều lần. Chờ vài phút rồi thử lại.' : 'TOO_MANY_ATTEMPTS: máy chủ đăng nhập đang bận (quá nhiều lượt vào từ cùng một mạng).';
     return m || 'Không đăng nhập được.';
   }
   async function auth() {
+    if (!S.admin) {                                   /* học sinh: dùng lại phiên ẩn danh đã lưu trên máy, chỉ tạo mới khi chưa có/hết hạn */
+      try {
+        const rt = localStorage.getItem('hubAnonRT');
+        if (rt) {
+          const r0 = await fetch('https://securetoken.googleapis.com/v1/token?key=' + FB.apiKey, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(rt) });
+          const j0 = await r0.json();
+          if (r0.ok && j0.id_token) { S.tok = j0.id_token; S.rt = j0.refresh_token; S.me = j0.user_id; localStorage.setItem('hubAnonRT', S.rt); return; }
+          localStorage.removeItem('hubAnonRT');
+        }
+      } catch (_) {}
+    }
     const body = S.admin ? { email: FB.adminEmail, password: S.pw, returnSecureToken: true } : { returnSecureToken: true };
     const r = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:' + (S.admin ? 'signInWithPassword' : 'signUp') + '?key=' + FB.apiKey, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
@@ -32,6 +43,7 @@
     const j = await r.json();
     if (!r.ok) throw Error(authError(j.error && j.error.message));
     S.tok = j.idToken; S.rt = j.refreshToken; S.me = j.localId;
+    if (!S.admin) { try { localStorage.setItem('hubAnonRT', S.rt); } catch (_) {} }
   }
   async function refresh() {
     if (!S.rt) return auth();
@@ -440,10 +452,13 @@
   function forget(code) { try { localStorage.setItem('hubCodes', JSON.stringify(recent().filter(x => x.code !== code))); } catch (_) {} }
   async function codeStatus(it) {
     const g = GAMES.find(x => x.id === it.game); if (!g) return null;
-    const [s, e] = await Promise.all([fb(g.ns + 'sessions/' + it.code + '/status'), fb(g.ns + 'sessions/' + it.code + '/end')]);
-    if (s == null) return 'gone';
-    if (s === 'ended' || (e && Date.now() > e + 3e5 && s === 'running')) return 'ended';
-    return s;
+    /* Cùng cách tính với Báo cáo (sessState) và với trang các game: status='running' mà đã quá giờ kết thúc (end) = ĐÃ KẾT THÚC,
+       dù chưa ai ghi status='ended' lên Firebase. */
+    const F = ['status', 'end', 'start', 'mode'];
+    const v = await Promise.all(F.map(k => fb(g.ns + 'sessions/' + it.code + '/' + k)));
+    if (v[0] == null) return 'gone';
+    const s = {}; F.forEach((k, i) => { if (v[i] != null) s[k] = v[i]; });
+    return sessState(g, s);
   }
 
 
@@ -523,7 +538,14 @@
     if (!/^[A-Z0-9]{3,8}$/.test(code)) return null;
     const spaces = [...new Set(GAMES.map(g => g.ns))];
     const found = await Promise.all(spaces.map(async ns => {
-      const [keys, id] = await Promise.all([fb(ns + 'sessions/' + code, 'GET', undefined, 'shallow=true'), fb(ns + 'sessions/' + code + '/game').catch(() => null)]);
+      let keys, id;
+      try {
+        [keys, id] = await Promise.all([fb(ns + 'sessions/' + code, 'GET', undefined, 'shallow=true'), fb(ns + 'sessions/' + code + '/game').catch(() => null)]);
+      } catch (e) {
+        /* vùng này bị chặn quyền đọc (vd. chưa thêm Rules cho race/) → bỏ qua vùng đó, vẫn tra các vùng còn lại. Lỗi mạng/đăng nhập thì báo như cũ. */
+        if (/^Không có quyền/.test(e.message || '')) { console.warn('[hub] bỏ qua vùng "' + ns + '":', e.message); return null; }
+        throw e;
+      }
       if (!keys || typeof keys !== 'object') return null;
       let g = null;
       if (keys.game) g = GAMES.find(x => x.id === id && x.ns === ns) || null;   /* có ghi rõ game → chỉ tin đúng game đó, không đoán */

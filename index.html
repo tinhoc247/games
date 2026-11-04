@@ -93,7 +93,12 @@ h1{margin:0 0 18px;font:800 36px/1.15 var(--f-h);background:linear-gradient(90de
       location.replace(r.url);
     }catch(e){
       btn.disabled=false;
-      bad(e&&e.dup?e.message:'Không kết nối được. Kiểm tra mạng rồi thử lại.');
+      console.error('[hub] resolve lỗi:',e);
+      const m=String(e&&e.message||'');
+      bad(e&&e.dup?m
+        :/TOO_MANY|RESOURCE_EXHAUSTED/.test(m)?'Có quá nhiều bạn vào cùng lúc. Em chờ khoảng 1 phút rồi bấm lại nhé.'
+        :/^Không có quyền/.test(m)?'Chưa đọc được dữ liệu game (lỗi quyền Firebase). Em báo thầy cô nhé. ['+m.slice(0,60)+']'
+        :'Không kết nối được. Kiểm tra mạng rồi thử lại.'+(m?' ['+m.slice(0,60)+']':''));
     }
   };
 
