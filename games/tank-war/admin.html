@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head><script src="../../quota.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tank War – Điều khiển</title>
+<link rel="stylesheet" href="../chay-dua/race.css">
+<link rel="stylesheet" href="../../fonts/vn-font.css">
+<style>
+body{overflow:auto;background:linear-gradient(135deg,#2f5a2a,#162a14)}#app{height:auto;min-height:100%;overflow:visible}
+.top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:rgba(15,23,42,.92);color:#fff}
+.top h1{margin:0;font-size:20px;flex:1;min-width:160px}.top .code{font-size:30px;font-weight:900;letter-spacing:6px;color:#fde047;background:#ffffff18;padding:2px 14px;border-radius:12px}
+.top .st{padding:3px 12px;border-radius:99px;font-weight:800;background:#ffffff22}.top button{padding:8px 14px;font-size:15px}
+.wrapA{max-width:1100px;margin:0 auto;padding:14px;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);gap:14px;align-items:start}
+@media(max-width:900px){.wrapA{grid-template-columns:1fr}}
+.panel{background:rgba(255,255,255,.97);border-radius:20px;padding:14px 16px;box-shadow:0 8px 24px #0004;margin-bottom:14px}.panel h3{margin:0 0 8px;color:#14532d}
+table{width:100%;border-collapse:collapse}td,th{padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:left}.avs{width:26px;height:26px;vertical-align:middle}
+.big2{font-size:clamp(34px,6vw,60px);font-weight:900;text-align:center;color:#166534}
+.lg{min-height:100vh;display:grid;place-items:center;padding:16px}.lg form{width:100%;max-width:380px;background:#fff;border-radius:22px;padding:26px 22px;text-align:center}.lg h2{margin:0 0 14px;color:#166534}
+.dash{position:fixed;left:8px;bottom:8px;z-index:50;background:rgba(20,33,61,.82);color:#fff;font:600 12px/1 system-ui,sans-serif;padding:7px 10px;border-radius:8px;text-decoration:none}
+</style></head>
+<body class="adm">
+<div id="app"></div><div id="toast"></div>
+<a class="dash" href="../../admin.html">⌂ Dashboard chung</a>
+<script>window.APPMODE = 'admin';</script>
+<script src="../chay-dua/race.js"></script>
+<script>
+(function () {
+  'use strict';
+  const TG = p => 'tank/' + p, qs = new URLSearchParams(location.search);
+  const CTL = String(qs.get('ctl') || '').toUpperCase(), REP = String(qs.get('rep') || '').toUpperCase(), CODE = CTL || REP, app = $('#app');
+  let S = null, PL = {}, shell = '', autoEnd = false;
+  const stored = () => { try { const j = JSON.parse(localStorage.getItem('hubPwL') || 'null'); if (j && j.p && j.t > Date.now()) return j.p; } catch (_) {} try { return sessionStorage.getItem('hubPw'); } catch (_) { return null; } };
+  const keep = pw => { try { sessionStorage.setItem('hubPw', pw); localStorage.setItem('hubPwL', JSON.stringify({ p: pw, t: Date.now() + 432e5 })); } catch (_) {} };
+  const toast = t => { const d = document.createElement('div'); d.textContent = t; $('#toast').appendChild(d); setTimeout(() => d.remove(), 4000); };
+  const link = () => { const u = new URL('../../index.html', location.href); u.searchParams.set('code', CODE); return u.href; };
+  function login(msg) {
+    app.innerHTML = `<div class="lg"><form id="f"><h2>🪖 Tank War – Admin</h2><input class="fld" id="pw" type="password" placeholder="Mật khẩu admin" autocomplete="current-password"><div class="err" id="er">${esc(msg || '')}</div><button class="ego">Đăng nhập</button></form></div>`;
+    $('#f').onsubmit = async e => { e.preventDefault(); ADMPW = $('#pw').value; try { TOK = null; await fbAuth(); keep(ADMPW); start(); } catch (x) { $('#er').textContent = x.message; } }; $('#pw').focus();
+  }
+  async function start() {
+    if (!CODE) return location.replace('../../admin.html');
+    try { S = await fb(TG('sessions/' + CODE)); if (!S) { app.innerHTML = '<div class="lg"><form><h2>Không tìm thấy phòng ' + esc(CODE) + '</h2></form></div>'; return; } await tick(); setInterval(tick, 2000); }
+    catch (e) { app.innerHTML = '<div class="lg"><form><h2>Lỗi</h2><p class="err">' + esc(e.message) + '</p></form></div>'; }
+  }
+  async function tick() {
+    try {
+      const [s, p] = await Promise.all([fb(TG('sessions/' + CODE)), fb(TG('players/' + CODE))]); if (!s) return; S = s; PL = p || {};
+      /* hết giờ → tự kết thúc (chỉ chế độ nhiều người, ở phòng điều khiển) */
+      if (CTL && S.mode !== 'solo' && S.status === 'running' && +S.startedAt > 0 && !autoEnd && Date.now() > +S.startedAt + CD_LEAD + CD_GO + (+S.dur || 10) * 60000 + 2000) { autoEnd = true; endGame(true); }
+      draw();
+    } catch (_) {}
+  }
+  async function startGame() { try { await fb(TG('sessions/' + CODE), 'PATCH', { status: 'running', startedAt: { '.sv': 'timestamp' } }); S.status = 'running'; shell = ''; tick(); } catch (e) { toast(e.message); } }
+  async function endGame(auto) { if (!auto && !confirm('Kết thúc trận và hiện bảng kết quả cho tất cả?')) return; try { await fb(TG('sessions/' + CODE), 'PATCH', { status: 'ended', endedAt: { '.sv': 'timestamp' } }); S.status = 'ended'; shell = ''; draw(); } catch (e) { toast(e.message); } }
+  const rows = () => Object.entries(PL).filter(([, v]) => v && v.name).map(([id, v]) => ({ id, ...v })).sort((a, b) => (b.k | 0) - (a.k | 0) || (b.g | 0) - (a.g | 0));
+  function csv() {
+    const r = [['Hạng', 'Tên', 'Đội', 'Hạ đối thủ', 'Vàng đang có', 'Tổng vàng kiếm', 'Bị hạ', 'Giáp', 'Súng']]; rows().forEach((x, i) => r.push([i + 1, x.name, x.team >= 0 ? x.team + 1 : '', x.k | 0, x.g | 0, x.gt | 0, x.d | 0, x.ar | 0, x.gu | 0]));
+    const b = new Blob(['﻿' + r.map(a => a.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n')], { type: 'text/csv' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'tank-war-' + CODE + '.csv'; a.click();
+  }
+  function draw() {
+    if (!S) return; const st = S.status, solo = S.mode === 'solo', key = [st, S.title, CTL].join('|');
+    if (key !== shell) {
+      shell = key; const stT = { waiting: '⏳ Đang chờ', running: solo ? '🏃 Đang mở' : '🔥 Đang đấu', ended: '🏁 Đã kết thúc' }[st] || st;
+      const b = !CTL ? '' : st === 'waiting' ? '<button class="gr" id="bS">▶ Bắt đầu trận</button>' : st === 'running' ? '<button class="rd" id="bE">⏹ Kết thúc</button>' : '';
+      app.innerHTML = `<div class="top"><h1>🪖 ${esc(S.title || 'Tank War')}</h1><span class="code">${esc(CODE)}</span><span class="st">${stT}</span><span class="st" id="cnt"></span><span class="st">${solo ? '1 người · ' + (+S.bots || 4) + ' xe máy' : 'Nhiều người' + (+S.teams > 0 ? ' · ' + S.teams + ' đội' : ' · chơi đơn')} · ${+S.dur || 10} phút</span>
+        <button class="alt" id="bL">🔗 Chép link</button>${b}<button class="alt" id="bC">⬇ CSV</button></div>
+        <div class="wrapA"><div class="panel"><h3>🏆 Bảng xếp hạng (số lần hạ đối thủ, rồi vàng đang có)</h3><div id="rk"></div></div>
+        <div>${st === 'waiting' ? `<div class="panel"><h3>Mời học sinh vào</h3><div class="big2">${esc(CODE)}</div><p class="hint" style="text-align:center">Học sinh nhập mã ở trang chủ hoặc dùng link:<br><b style="word-break:break-all">${esc(link())}</b></p></div>` : ''}<div class="panel" id="tm"></div></div></div>`;
+      $('#bL').onclick = async () => { try { await navigator.clipboard.writeText(link()); toast('Đã chép link'); } catch (_) { prompt('Chép link:', link()); } };
+      $('#bC').onclick = csv; if ($('#bS')) $('#bS').onclick = startGame; if ($('#bE')) $('#bE').onclick = () => endGame(false);
+    }
+    const R = rows(), md = ['🥇', '🥈', '🥉']; $('#cnt').textContent = '👥 ' + R.length;
+    $('#rk').innerHTML = `<table><tr><th>#</th><th>Người chơi</th><th>Đội</th><th>💥 Hạ</th><th>💰 Vàng</th><th>☠️ Bị hạ</th><th>🛡️/🔫</th></tr>${R.map((r, i) => `<tr><td>${md[i] || i + 1}</td><td>${avOf(r.av)} ${esc(r.name)}${r.al ? '' : ' <small>(chờ hồi sinh)</small>'}</td><td>${r.team >= 0 ? '<b style="color:' + ['#ef4444', '#3b82f6', '#eab308', '#a855f7', '#14b8a6', '#f97316'][r.team % 6] + '">●</b> ' + (r.team + 1) : '–'}</td><td>${r.k | 0}</td><td>${r.g | 0}</td><td>${r.d | 0}</td><td>${r.ar | 0}/${r.gu | 0}</td></tr>`).join('') || '<tr><td colspan="7" class="hint">Chưa có người chơi.</td></tr>'}</table>`;
+    const T = {}; R.forEach(r => { if (r.team >= 0) { const t = T[r.team] = T[r.team] || { g: 0, k: 0, n: 0 }; t.g += r.g | 0; t.k += r.k | 0; t.n++; } });
+    $('#tm').innerHTML = Object.keys(T).length ? '<h3>👥 Điểm theo đội (hạ đối thủ, rồi vàng)</h3>' + Object.entries(T).sort((a, b) => b[1].k - a[1].k || b[1].g - a[1].g).map(([k, t]) => `<div style="padding:4px 0;font-weight:800"><b style="color:${['#ef4444', '#3b82f6', '#eab308', '#a855f7', '#14b8a6', '#f97316'][k % 6]}">●</b> Đội ${+k + 1} (${t.n} bạn): 💥 ${t.k} · 💰 ${t.g}</div>`).join('') : '<p class="hint">Luật: bắn trúng +100 vàng; bị hạ phải trả lời câu hỏi để hồi sinh; 1000 vàng/lần nâng giáp (tối đa 3) hoặc súng (phá 1–3 giáp).</p>';
+  }
+  (async function boot() { const pw = stored(); if (pw) { ADMPW = pw; try { await fbAuth(); return start(); } catch (_) {} } login(); })();
+})();
+</script>
+</body>
+</html>

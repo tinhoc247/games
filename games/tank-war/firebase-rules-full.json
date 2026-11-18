@@ -1,0 +1,313 @@
+{
+  "rules": {
+    "sessions": {
+      ".read": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+      ".indexOn": [
+        "lib"
+      ],
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+      }
+    },
+    "results": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+        "$uid": {
+          ".write": "(auth != null && auth.uid === $uid && root.child('sessions/' + $code + '/status').exists()) || (auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password')",
+          ".validate": "newData.child('code').val() === $code && newData.child('id').val() === $uid && newData.child('name').isString() && newData.child('name').val().length <= 40"
+        }
+      }
+    },
+    "live": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && (root.child('sessions/' + $code + '/status').exists() || $code.matches(/^(ch-[A-Z0-9]{4,6}|xq-[A-Z0-9]{4,6}|on-chess|on-xq|mm-3-0|mm-xq-3-0)$/))",
+          ".validate": "(!newData.child('n').exists() || (newData.child('n').isString() && newData.child('n').val().length <= 40)) && (!newData.child('g').exists() || (newData.child('g').isNumber() && newData.child('g').val() >= -1000000 && newData.child('g').val() <= 1000000000)) && (!newData.child('z').exists() || (newData.child('z').isNumber() && newData.child('z').val() >= 0 && newData.child('z').val() <= 1))",
+          "ev": {
+            "$key": {
+              ".write": "auth != null && root.child('sessions/' + $code + '/status').exists()",
+              ".validate": "newData.hasChildren(['t', 'ts']) && (newData.child('t').val() === 'freeze' || newData.child('t').val() === 'back1' || newData.child('t').val() === 'back2') && newData.child('ts').isNumber() && (!newData.child('f').exists() || (newData.child('f').isString() && newData.child('f').val().length <= 60)) && (!newData.child('a').exists() || (newData.child('a').isString() && newData.child('a').val().length <= 40))",
+              "t": {
+                ".validate": "newData.isString()"
+              },
+              "ts": {
+                ".validate": "newData.isNumber()"
+              },
+              "f": {
+                ".validate": "newData.isString()"
+              },
+              "a": {
+                ".validate": "newData.isString()"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "lib": {
+      ".read": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+      ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+    },
+    "libq": {
+      ".read": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+      ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+    },
+    "libimg": {
+      ".read": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+      ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+      "$id": {
+        ".read": "auth != null"
+      }
+    },
+    "gold": {
+      "ts": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+        ".read": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+      },
+      "sessions": {
+        ".read": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+        ".indexOn": [
+          "lib"
+        ],
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+        }
+      },
+      "quiz": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+        }
+      },
+      "lib": {
+        ".read": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+        ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+      },
+      "libq": {
+        ".read": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+        ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+      },
+      "libimg": {
+        ".read": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+        ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+        "$id": {
+          ".read": "auth != null"
+        }
+      },
+      "players": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+          "$pid": {
+            ".write": "auth != null && auth.uid === $pid && root.child('gold/sessions/' + $code + '/status').exists()",
+            ".validate": "newData.hasChildren(['name', 'gold']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 40 && (!newData.child('ok').exists() || (newData.child('ok').isNumber() && newData.child('ok').val() >= 0 && newData.child('ok').val() <= 100000)) && (!newData.child('bad').exists() || (newData.child('bad').isNumber() && newData.child('bad').val() >= 0 && newData.child('bad').val() <= 100000))",
+            "gold": {
+              ".write": "auth != null && data.exists() && root.child('gold/sessions/' + $code + '/status').exists() && root.child('gold/players/' + $code + '/' + auth.uid).exists()",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() % 1 === 0 && newData.val() <= 1000000000"
+            }
+          }
+        }
+      },
+      "logs": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('gold/sessions/' + $code + '/status').exists()"
+          }
+        }
+      },
+      "events": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+          "$vid": {
+            "$k": {
+              ".write": "auth != null && root.child('gold/sessions/' + $code + '/status').exists() && (!data.exists() || auth.uid === $vid)"
+            }
+          }
+        }
+      },
+      "moves": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+          "$id": {
+            ".write": "auth != null && !data.exists() && root.child('gold/sessions/' + $code + '/status').exists()",
+            ".validate": "newData.hasChildren(['k','p']) && newData.child('p').val() === auth.uid"
+          }
+        }
+      }
+    },
+    "race": {
+      "sessions": {
+        ".read": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+        ".indexOn": [
+          "lib"
+        ],
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+        }
+      },
+      "quiz": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+        }
+      },
+      "players": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+          "$id": {
+            ".write": "auth != null && auth.uid === $id && root.child('race/sessions/' + $code + '/status').exists()",
+            ".validate": "newData.child('name').exists() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 40 && (!newData.child('pos').exists() || (newData.child('pos').isNumber() && newData.child('pos').val() >= -1000 && newData.child('pos').val() <= 1000 && (!root.child('race/sessions/' + $code + '/nq').exists() || newData.child('pos').val() <= root.child('race/sessions/' + $code + '/nq').val()))) && (!newData.child('ok').exists() || (newData.child('ok').isNumber() && newData.child('ok').val() >= 0 && newData.child('ok').val() <= 100000)) && (!newData.child('bad').exists() || (newData.child('bad').isNumber() && newData.child('bad').val() >= 0 && newData.child('bad').val() <= 100000)) && (!newData.child('fin').exists() || (newData.child('fin').isNumber() && (newData.child('fin').val() === data.child('fin').val() || newData.child('fin').val() === now)))"
+          }
+        }
+      },
+      "logs": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+          "$id": {
+            ".write": "auth != null && auth.uid === $id && root.child('race/sessions/' + $code + '/status').exists()"
+          }
+        }
+      },
+      "events": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+          "$eid": {
+            ".write": "auth != null && !data.exists() && root.child('race/sessions/' + $code + '/status').exists()",
+            ".validate": "newData.hasChildren(['type', 'from']) && newData.child('from').val() === auth.uid"
+          }
+        }
+      }
+    },
+    "tank": {
+      "sessions": {
+        ".read": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+        ".indexOn": [
+          "lib"
+        ],
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+        }
+      },
+      "quiz": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+        }
+      },
+      "players": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+          "$id": {
+            ".write": "auth != null && auth.uid === $id && root.child('tank/sessions/' + $code + '/status').exists()",
+            ".validate": "newData.child('name').exists() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 40 && (!newData.child('g').exists() || (newData.child('g').isNumber() && newData.child('g').val() >= 0 && newData.child('g').val() <= 100000000)) && (!newData.child('gt').exists() || (newData.child('gt').isNumber() && newData.child('gt').val() >= 0 && newData.child('gt').val() <= 100000000)) && (!newData.child('k').exists() || (newData.child('k').isNumber() && newData.child('k').val() >= 0 && newData.child('k').val() <= 100000)) && (!newData.child('d').exists() || (newData.child('d').isNumber() && newData.child('d').val() >= 0 && newData.child('d').val() <= 100000)) && (!newData.child('ar').exists() || (newData.child('ar').isNumber() && newData.child('ar').val() >= 0 && newData.child('ar').val() <= 3)) && (!newData.child('gu').exists() || (newData.child('gu').isNumber() && newData.child('gu').val() >= 0 && newData.child('gu').val() <= 3)) && (!newData.child('x').exists() || (newData.child('x').isNumber() && newData.child('x').val() >= -50 && newData.child('x').val() <= 2700)) && (!newData.child('y').exists() || (newData.child('y').isNumber() && newData.child('y').val() >= -50 && newData.child('y').val() <= 1800))"
+          }
+        }
+      },
+      "events": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'",
+          "$eid": {
+            ".write": "auth != null && !data.exists() && root.child('tank/sessions/' + $code + '/status').exists()",
+            ".validate": "newData.hasChildren(['t', 'f', 'ts']) && ((newData.child('t').val() === 'f' && newData.child('f').val() === auth.uid) || (newData.child('t').val() === 'h' && newData.child('to').val() === auth.uid))"
+          }
+        }
+      }
+    },
+    "bida": {
+      "rooms": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          "h": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+          },
+          "hn": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+          },
+          "g": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+          },
+          "gn": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+          },
+          "seed": {
+            ".validate": "newData.isNumber()"
+          },
+          "tg": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 50"
+          },
+          "s": {
+            "$n": {
+              ".validate": "newData.hasChildren(['vx', 'vy'])",
+              "vx": {
+                ".validate": "newData.isNumber() && newData.val() >= -3000 && newData.val() <= 3000"
+              },
+              "vy": {
+                ".validate": "newData.isNumber() && newData.val() >= -3000 && newData.val() <= 3000"
+              },
+              "x": {
+                ".validate": "newData.isNumber() && newData.val() >= -100 && newData.val() <= 1100"
+              },
+              "y": {
+                ".validate": "newData.isNumber() && newData.val() >= -100 && newData.val() <= 1100"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "online": {
+        "$g": {
+          ".read": "auth != null",
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid",
+            "n": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "t": {
+              ".validate": "newData.isNumber()"
+            },
+            "s": {
+              ".validate": "newData.isNumber()"
+            },
+            "inv": {
+              ".write": "auth != null",
+              ".validate": "newData.hasChildren(['f', 'n', 'r', 't']) && newData.child('n').isString() && newData.child('n').val().length <= 40 && newData.child('r').isString() && newData.child('r').val().length <= 10"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

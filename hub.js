@@ -185,6 +185,28 @@
         return { control: 'admin.html?ctl=' + c.code };
       }
     }
+    ,{
+      id: 'tank-war', name: 'Tank War', icon: '🪖', tone: '#3F6B2B',
+      blurb: 'Lái xe tăng nhìn từ trên xuống, bắn trúng đối phương được 100 vàng, bị hạ phải trả lời câu hỏi để hồi sinh. Về xưởng ở 4 góc để nâng giáp và súng. Chơi 1 người với xe máy (bài tập về nhà) hoặc nhiều người (chơi đơn / chia đội).',
+      dir: 'games/tank-war/', ns: 'tank/',
+      match: k => !!k.game,
+      options: [
+        { key: 'mode', label: 'Chế độ chơi', type: 'select', def: 'multi', choices: [['multi', 'Nhiều người: cả lớp cùng đấu, có xếp hạng'], ['solo', '1 người: bài tập về nhà, đấu với xe tăng máy']] },
+        { key: 'bots', label: 'Số xe tăng máy chơi chung', type: 'number', def: 4, min: 1, showIf: o => o.mode === 'solo' },
+        { key: 'teams', label: 'Số đội (0 = mỗi bạn chơi đơn)', type: 'number', def: 0, min: 0, showIf: o => o.mode === 'multi' },
+        { key: 'dur', label: 'Thời gian chơi (phút)', type: 'number', def: 10, min: 1 }
+      ],
+      async create(c) {
+        const o = c.o, solo = o.mode === 'solo';
+        await fb('tank/quiz/' + c.code, 'PUT', c.qs);
+        await fb('tank/sessions/' + c.code, 'PUT', {
+          code: c.code, title: c.title, mode: solo ? 'solo' : 'multi', status: solo ? 'running' : 'waiting',
+          dur: Math.max(1, +o.dur || 10), bots: Math.max(1, +o.bots || 4), teams: solo ? 0 : Math.max(0, Math.min(6, +o.teams || 0)),
+          seed: Math.random() * 2147483647 | 0, nq: c.nq, admin: c.me, created: c.now, lib: c.bank.id, game: 'tank-war'
+        });
+        return { control: 'admin.html?ctl=' + c.code };
+      }
+    }
     /* ---- MẪU THÊM GAME MỚI (bỏ comment, sửa lại) ----
     ,{
       id: 'ten-game', name: 'Tên game', icon: '🎲', tone: '#2A6F4E',
@@ -519,7 +541,7 @@
     if (!S.admin) throw Error('Cần đăng nhập admin.');
     const g = GAMES.find(x => x.id === it.game); if (!g) throw Error('Không rõ game.');
     /* xoá sạch mọi nhánh của mã; 'sessions' để CUỐI để nếu lỗi giữa chừng vẫn còn trong danh sách và bấm xoá lại được */
-    const parts = g.id === 'kho-bau' ? ['results', 'live', 'sessions'] : g.id === 'chay-dua' ? ['players', 'logs', 'quiz', 'events', 'sessions'] : g.id === 'bao-ve' ? ['players', 'logs', 'quiz', 'moves', 'events', 'sessions'] : ['players', 'logs', 'quiz', 'events', 'sessions'];
+    const parts = g.id === 'kho-bau' ? ['results', 'live', 'sessions'] : g.id === 'tank-war' ? ['players', 'quiz', 'events', 'sessions'] : g.id === 'chay-dua' ? ['players', 'logs', 'quiz', 'events', 'sessions'] : g.id === 'bao-ve' ? ['players', 'logs', 'quiz', 'moves', 'events', 'sessions'] : ['players', 'logs', 'quiz', 'events', 'sessions'];
     for (const p of parts) await fb(g.ns + p + '/' + it.code, 'DELETE');
     forget(it.code);
     /* Hết phiên của Đổi Vàng / Bảo vệ thì dọn luôn gold/ts (mỗi học sinh 1 mục giờ máy chủ, không gắn với mã) */

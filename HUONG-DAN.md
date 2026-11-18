@@ -11,6 +11,7 @@ games/
   doi-vang/       Đổi Vàng          (index.html, admin.html)
   bao-ve/         Bảo vệ vương quốc (index.html, admin.html, cau-hoi-mau.xlsx)
   chay-dua/       Chạy đua (index.html, admin.html, race*.js/css) – xem games/chay-dua/HUONG-DAN.md, CẦN thêm Rules cho nhánh race
+  tank-war/       Tank War (index.html, admin.html) – xem games/tank-war/HUONG-DAN.md, CẦN thêm Rules cho nhánh tank (dùng lại file của chay-dua)
 ```
 
 Đưa cả thư mục lên hosting (GitHub Pages, Netlify...) giữ nguyên cấu trúc. Dùng chung Firebase cũ, **không cần sửa Rules**.

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head><script src="../../quota.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tank War</title>
+<link rel="stylesheet" href="../chay-dua/qbase.css">
+<link rel="stylesheet" href="../chay-dua/race.css">
+<link rel="stylesheet" href="../../fonts/vn-font.css">
+<style>
+:root{--hh:0px}
+body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:none;cursor:crosshair;z-index:1}
+.hud{position:fixed;z-index:5;pointer-events:none;color:#fff;font-weight:800;text-shadow:0 2px 3px #000;display:none}
+.hud .pl{display:inline-block;margin:0 6px 6px 0;background:#000a;padding:6px 12px;border-radius:12px;font-size:17px}
+#hl{left:12px;top:10px;max-width:62vw}
+#hr{right:12px;top:10px;background:#000a;padding:8px 12px;border-radius:12px;font-size:14px;min-width:220px}
+#hr div{display:flex;gap:6px;align-items:center;padding:2px 0}#hr b{margin-left:auto}#hr .me{color:#fde047}
+#hr .avs{width:20px;height:20px}
+#shop{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:6;display:none;gap:12px;background:#000d;color:#fff;padding:12px 16px;border-radius:18px;text-align:center}
+#shop button{font-size:17px;padding:10px 16px}#shop small{display:block;font-weight:600;opacity:.85}
+.stag{font-weight:900;color:#fde047;margin:0 0 6px;width:100%}
+.sumt{width:100%;border-collapse:collapse;font-size:17px}.sumt td,.sumt th{padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:left}.sumt tr.me{background:#fef3c7;font-weight:800}
+.sumt .avs{width:26px;height:26px;vertical-align:middle}
+.tools{position:fixed;right:10px;bottom:10px;z-index:7}
+</style></head>
+<body>
+<canvas id="cv"></canvas>
+<div class="hud" id="hl"></div><div class="hud" id="hr"></div>
+<div id="shop"><div class="stag" style="flex-basis:100%">🔧 Xưởng nâng cấp (an toàn, không bắn được)</div><button id="bA" class="gr"></button><button id="bG" class="rd"></button></div>
+<div id="app"></div>
+<div id="modal"><div class="box" id="mbox"></div></div>
+<div id="toast"></div>
+<div class="ov" id="ovC"><div class="cnt" id="ovCn">3</div></div>
+<div class="ov" id="ovZ"><div class="pop"><div class="big">⏸️</div><h3>Game đang tạm dừng</h3><p>Game chơi ở chế độ toàn màn hình.</p><button class="ego" id="bZ">▶ Chơi tiếp</button></div></div>
+<div class="tools"><button id="bSnd" title="Âm thanh">🔊</button></div>
+<script src="../chay-dua/race.js"></script>
+<script src="../chay-dua/race-q.js"></script>
+<script>
+(function () {
+  'use strict';
+  const TG = p => 'tank/' + p, qs = new URLSearchParams(location.search);
+  const CODE = String(qs.get('code') || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+  const W = 2600, HH = 1700, R = 22, SHOP = 210, COST = 1000, TC = ['#ef4444', '#3b82f6', '#eab308', '#a855f7', '#14b8a6', '#f97316'];
+  const app = $('#app'), cv = $('#cv'), c = cv.getContext('2d');
+  const LS = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (_) { return null; } };
+  let S = null, PL = {}, RAW = [], VALID = [], OFF = 0, phase = 'join', joinAv = '', solo = false, END = 0, TI = null, lastKey = '', seen = new Set(), TER = null, OB = [];
+  let me = { x: 0, y: 0, b: 0, a: 0, armor: 0, gun: 0, gold: 0, gt: 0, k: 0, d: 0, alive: false, inv: 0, team: -1, name: '', av: '' };
+  let camInit = 0, lastDt = .016, BOTS = [], TK = {}, BU = [], FX = [], paused = false, nextShot = 0, mouse = { x: 0, y: 0, d: false }, keys = {}, cw = 0, ch = 0, cx = 0, cy = 0, lastSave = 0, lastHud = 0, last = 0;
+  const turn = (a, t, k) => { let d = Math.atan2(Math.sin(t - a), Math.cos(t - a)); return a + d * Math.min(1, k); };
+  const now = () => Date.now() + OFF, cl = (v, a, b) => Math.max(a, Math.min(b, v)), rnd = (a, b) => a + Math.random() * (b - a);
+  const toast = (t, g) => { const d = document.createElement('div'); if (g) d.className = 'good'; d.textContent = t; $('#toast').appendChild(d); setTimeout(() => d.remove(), 3200); };
+  $('#bSnd').textContent = Snd.mute ? '🔇' : '🔊'; $('#bSnd').onclick = () => { $('#bSnd').textContent = Snd.toggle() ? '🔇' : '🔊'; };
+  const sameTeam = (a, b) => a >= 0 && a === b;
+
+  /* ---------- Bản đồ: rừng (trái) – đồng bằng (giữa) – đồi núi (phải); 4 xưởng ở 4 góc ---------- */
+  const shopAt = (x, y) => (x < SHOP || x > W - SHOP) && (y < SHOP || y > HH - SHOP) ? ((x > W / 2 ? 1 : 0) + (y > HH / 2 ? 2 : 0)) : -1;
+  const rng = s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  function build(seed) {
+    const r = rng(seed || 1); OB = [];
+    for (let i = 0; i < 150; i++) {
+      const x = 60 + r() * (W - 120), y = 60 + r() * (HH - 120), z = x / W; if (shopAt(x, y) >= 0 || shopAt(x + 50, y + 50) >= 0 || shopAt(x - 50, y - 50) >= 0) continue;
+      if (z < .34) OB.push({ t: 0, x, y, r: 20 + r() * 12 }); else if (z > .66) OB.push({ t: 1, x, y, r: 22 + r() * 26 }); else if (r() < .3) OB.push({ t: 2, x, y, r: 16 + r() * 10 });
+    }
+    TER = document.createElement('canvas'); TER.width = W; TER.height = HH; const g = TER.getContext('2d'), rr = rng((seed || 1) + 7);
+    const gr = g.createLinearGradient(0, 0, W, 0); gr.addColorStop(0, '#2f6b34'); gr.addColorStop(.3, '#3f7f3a'); gr.addColorStop(.4, '#86c45f'); gr.addColorStop(.6, '#8fcb63'); gr.addColorStop(.7, '#a8a07c'); gr.addColorStop(1, '#8d8467');
+    g.fillStyle = gr; g.fillRect(0, 0, W, HH);
+    for (let i = 0; i < 3500; i++) { const x = rr() * W; g.fillStyle = x / W > .66 ? (rr() < .5 ? '#7b7358' : '#b4ab8a') : (rr() < .5 ? '#ffffff14' : '#00000014'); g.fillRect(x, rr() * HH, 3 + rr() * 5, 2 + rr() * 3); }
+    for (let i = 0; i < 160; i++) { const x = W * .34 + rr() * W * .32; g.fillStyle = ['#fde68a', '#fbcfe8', '#fff'][i % 3]; g.beginPath(); g.arc(x, rr() * HH, 3, 0, 7); g.fill(); }
+    OB.forEach(o => {
+      g.fillStyle = '#0003'; g.beginPath(); g.ellipse(o.x + 6, o.y + 8, o.r, o.r * .8, 0, 0, 7); g.fill();
+      if (o.t === 0) { g.fillStyle = '#5b3a1e'; g.fillRect(o.x - 4, o.y - 4, 8, 14); g.fillStyle = '#1f5a2a'; g.beginPath(); g.arc(o.x, o.y - 4, o.r, 0, 7); g.fill(); g.fillStyle = '#2f8a3c'; g.beginPath(); g.arc(o.x - 4, o.y - 8, o.r * .6, 0, 7); g.fill(); }
+      else { g.fillStyle = o.t ? '#6f6a62' : '#8b8b84'; g.beginPath(); g.arc(o.x, o.y, o.r, 0, 7); g.fill(); g.fillStyle = '#ffffff30'; g.beginPath(); g.arc(o.x - o.r * .3, o.y - o.r * .3, o.r * .5, 0, 7); g.fill(); }
+    });
+    [[0, 0], [W - SHOP, 0], [0, HH - SHOP], [W - SHOP, HH - SHOP]].forEach(p => {
+      g.fillStyle = '#334155'; g.fillRect(p[0], p[1], SHOP, SHOP); g.fillStyle = '#475569'; g.fillRect(p[0] + 10, p[1] + 10, SHOP - 20, SHOP - 20);
+      g.strokeStyle = '#facc15'; g.setLineDash([18, 12]); g.lineWidth = 5; g.strokeRect(p[0] + 6, p[1] + 6, SHOP - 12, SHOP - 12); g.setLineDash([]);
+      g.font = '56px serif'; g.textAlign = 'center'; g.fillText('🔧', p[0] + SHOP / 2, p[1] + SHOP / 2 + 4); g.font = '800 20px "Be Vietnam Pro",sans-serif'; g.fillStyle = '#fde047'; g.fillText('XƯỞNG', p[0] + SHOP / 2, p[1] + SHOP / 2 + 40);
+    });
+  }
+  const blocked = (x, y, rad) => { if (x < rad || y < rad || x > W - rad || y > HH - rad) return 1; for (const o of OB) { const dx = x - o.x, dy = y - o.y, rr = rad + o.r; if (dx * dx + dy * dy < rr * rr) return 1; } return 0; };
+  function spawnPos() { for (let i = 0; i < 200; i++) { const x = rnd(80, W - 80), y = rnd(80, HH - 80); if (shopAt(x, y) < 0 && shopAt(x + 60, y + 60) < 0 && shopAt(x - 60, y - 60) < 0 && !blocked(x, y, R + 14)) return [x, y]; } return [W / 2, HH / 2]; }
+  function move(t, vx, vy, dt) { const k = t.x / W > .66 ? .8 : t.x / W < .34 ? .9 : 1, nx = t.x + vx * dt * k, ny = t.y + vy * dt * k; if (!blocked(nx, t.y, R)) t.x = nx; if (!blocked(t.x, ny, R)) t.y = ny; }
+
+  /* ---------- Vào phòng ---------- */
+  const taken = () => new Set(Object.values(PL).map(v => v && v.av));
+  function showEntry(msg) {
+    app.innerHTML = `<div class="entry"><main class="ecard pk"><div class="ebadge">🪖</div><h2>Tank War</h2><p class="hint">Mã phòng: <b>${esc(CODE)}</b></p>
+      <input class="fld" id="jN" maxlength="20" placeholder="Nhập tên của em" autocomplete="off"><p class="hint">Chọn nhân vật ngồi trên xe tăng</p><div id="avs"></div>
+      <div class="err" id="jE">${esc(msg || '')}</div><button class="ego" id="jB">Vào chiến trường ➜</button></main></div>`;
+    drawAv(); $('#jB').onclick = join; $('#jN').addEventListener('keydown', e => { if (e.key === 'Enter') join(); }); $('#jN').focus();
+  }
+  function drawAv() {
+    const t = taken(), fr = AVS.filter(a => !t.has(a)); if (!joinAv || t.has(joinAv)) joinAv = fr[Math.random() * fr.length | 0] || AVS[0];
+    $('#avs').innerHTML = AVS.map(a => `<button type="button" class="avb${a === joinAv ? ' on' : ''}" data-a="${a}" title="${AVN[a]}"${t.has(a) ? ' disabled' : ''}>${avH(a)}</button>`).join('');
+    $('#avs').onclick = e => { const b = e.target.closest('.avb'); if (b && !b.disabled) { joinAv = b.dataset.a; drawAv(); } };
+  }
+  async function join() {
+    const name = $('#jN').value.trim(), er = t => $('#jE').textContent = t; if (!name) return er('Nhập tên của em nhé.');
+    $('#jB').disabled = true; er('Đang vào…'); Snd.unlock();
+    try {
+      S = await fb(TG('sessions/' + CODE)); if (!S) throw Error('Phòng không còn tồn tại.'); if (S.status === 'ended') throw Error('Trận này đã kết thúc.');
+      PL = (await fb(TG('players/' + CODE))) || {};
+      const team = +S.teams > 0 && S.mode !== 'solo' ? Object.keys(PL).length % (+S.teams) : -1;
+      await fb(TG('players/' + CODE + '/' + ME), 'PUT', { name, av: joinAv, team, g: 0, gt: 0, k: 0, d: 0, ar: 0, gu: 0, al: 0, joined: Date.now() });
+      LS('tankGame', { code: CODE, id: ME, rt: RT }); await enter(true);
+    } catch (e) { $('#jB').disabled = false; er(e.message); }
+  }
+  async function enter(fresh) {
+    S = (await fb(TG('sessions/' + CODE))) || S; solo = S.mode === 'solo';
+    const raw = await fb(TG('quiz/' + CODE)); await preImgs(raw); RAW = JSON.parse(raw || '[]'); VALID = RAW.map((x, i) => norm(x) ? i : -1).filter(i => i >= 0);
+    if (!VALID.length) throw Error('Phòng chưa có câu hỏi hợp lệ.');
+    build(+S.seed || (CODE.charCodeAt(0) * 7919 + CODE.charCodeAt(1) * 104729));
+    OFF = await fbClockOffset(TG('players/' + CODE + '/' + ME));
+    const m = (await fb(TG('players/' + CODE + '/' + ME))) || {};
+    Object.assign(me, { name: m.name, av: m.av, team: m.team == null ? -1 : m.team, gold: m.g | 0, gt: m.gt | 0, k: m.k | 0, d: m.d | 0, armor: m.ar | 0, gun: m.gu | 0, id: ME });
+    const e0 = await fbEv(''); Object.keys(e0).forEach(k => seen.add(k)); lastKey = Object.keys(e0).sort().pop() || '';
+    clearInterval(TI); TI = setInterval(tick, solo ? 4000 : 700); await tick();
+    if (solo) { if (m.t0 > 0) startPlay(m.t0, false); else { phase = 'count'; app.innerHTML = ''; raceCountdown(now(), OFF, $('#ovC'), $('#ovCn'), () => startPlay(now(), true)); } }
+    else route();
+  }
+  function route() {
+    if (phase === 'play' || phase === 'end') return;
+    if (S.status === 'ended') return finish();
+    if (S.status !== 'running') return drawWait();
+    const sa = +S.startedAt;
+    if (raceInCountdown(sa, OFF)) { if (phase !== 'count') { phase = 'count'; app.innerHTML = ''; raceCountdown(sa, OFF, $('#ovC'), $('#ovCn'), () => startPlay(sa + CD_LEAD + CD_GO, false)); } return; }
+    startPlay(sa + CD_LEAD + CD_GO, false);
+  }
+  function drawWait() {
+    phase = 'wait'; const L = Object.values(PL).filter(v => v && v.name);
+    app.innerHTML = `<div class="entry"><main class="ecard wide"><div class="ebadge">⏳</div><h2>Đang chờ xuất phát…</h2>
+      <p class="hint">Thầy/cô bấm <b>Bắt đầu</b> là cả lớp vào trận! Thời gian: <b>${+S.dur || 10} phút</b>${+S.teams > 0 ? ' · chia ' + S.teams + ' đội' : ''}</p>
+      <div class="plist">${L.map(r => `<span class="pc">${avOf(r.av)} ${esc(r.name)}</span>`).join('')}</div></main></div>`;
+  }
+  async function fbEv(lk) {
+    const q = 'orderBy=' + encodeURIComponent('"$key"') + (lk ? '&startAt=' + encodeURIComponent('"' + lk + '"') : '&limitToLast=1');
+    return (await fb(TG('events/' + CODE), 'GET', undefined, q)) || {};
+  }
+
+  /* ---------- Bắt đầu chơi ---------- */
+  function startPlay(t0, fresh) {
+    phase = 'play'; app.style.display = 'none'; cv.style.display = 'block'; ['hl', 'hr'].forEach(i => $('#' + i).style.display = 'block');
+    END = t0 + (+S.dur || 10) * 60000; if (solo) fb(TG('players/' + CODE + '/' + ME), 'PATCH', { t0 }).catch(() => {});
+    if (solo) BOTS = Array.from({ length: Math.max(1, +S.bots || 4) }, (_, i) => { const b = { id: 'b' + i, name: 'Máy ' + (i + 1), av: AVS[(i * 7 + 3) % AVS.length], team: -1, bot: 1, g: 0, k: 0, gun: Math.random() < .3 ? 1 : 0, armor: (Math.random() < .4 ? 1 : 0) + (Math.random() < .15 ? 1 : 0), alive: true, b: 0, a: 0, cd: rnd(1, 2), wp: null, wt: 0 }; [b.x, b.y] = spawnPos(); return b; });
+    spawn(); resize(); last = performance.now(); requestAnimationFrame(loop); setInterval(() => { try { Snd.music(phase === 'play'); } catch (_) {} }, 600);
+    Snd.start(); toast('🪖 Vào trận! WASD/mũi tên để lái, chuột để ngắm và bắn. Về xưởng ở 4 góc để nâng cấp.', true);
+  }
+  function spawn() { [me.x, me.y] = spawnPos(); me.alive = true; me.vx = me.vy = 0; me.inv = now() + 2500; save(); }
+  function resize() { cw = cv.width = innerWidth; ch = cv.height = innerHeight; }
+  addEventListener('resize', resize);
+  addEventListener('keydown', e => { const k = e.key.toLowerCase(); keys[k] = 1; if (phase === 'play' && me.alive && !paused) { if (k === '1') buy('a'); if (k === '2') buy('g'); } if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k) && phase === 'play') e.preventDefault(); });
+  addEventListener('keyup', e => { keys[e.key.toLowerCase()] = 0; });
+  cv.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+  cv.addEventListener('mousedown', e => { mouse.d = true; mouse.x = e.clientX; mouse.y = e.clientY; });
+  addEventListener('mouseup', () => { mouse.d = false; });
+  cv.addEventListener('contextmenu', e => e.preventDefault());
+  /* toàn màn hình: vào ở lần chạm đầu; thoát ra thì tạm dừng */
+  const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement), docE = document.documentElement;
+  const reqFs = () => { try { const p = (docE.requestFullscreen || docE.webkitRequestFullscreen || (() => {})).call(docE, { navigationUI: 'hide' }); if (p && p.catch) p.catch(() => {}); } catch (_) {} };
+  let wasFs = false; document.addEventListener('pointerdown', () => { if (!fsOn()) reqFs(); }, true);
+  const onFs = () => { if (fsOn()) wasFs = true; else if (wasFs && phase === 'play') { paused = true; $('#ovZ').style.display = 'flex'; } };
+  document.addEventListener('fullscreenchange', onFs); document.addEventListener('webkitfullscreenchange', onFs);
+  $('#bZ').onclick = () => { paused = false; $('#ovZ').style.display = 'none'; last = performance.now(); reqFs(); };
+  document.addEventListener('visibilitychange', () => { if (document.hidden && phase === 'play' && fsOn()) { paused = true; $('#ovZ').style.display = 'flex'; } });
+
+  /* ---------- Bắn, trúng đạn ---------- */
+  function mkBullet(o, tm, x, y, a, L, adv) { const sp = 680; BU.push({ o, tm, L, x: x + Math.cos(a) * sp * adv, y: y + Math.sin(a) * sp * adv, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.05 - adv }); }
+  function fire(t, mine) {
+    const bx = t.x + Math.cos(t.a) * 36, by = t.y + Math.sin(t.a) * 36; mkBullet(t.id || ME, t.team, bx, by, t.a, t.gun, 0); Snd.cheer(.12, .06);
+    if (mine && !solo) fb(TG('events/' + CODE), 'POST', { t: 'f', f: ME, x: Math.round(bx), y: Math.round(by), a: +t.a.toFixed(3), L: t.gun, tm: t.team, ts: { '.sv': 'timestamp' } }).catch(() => {});
+  }
+  const fx = (x, y, tx) => FX.push({ x, y, t: 0, tx });
+  /* giáp chịu 1 phát; súng cấp L bỏ qua L lớp giáp: còn giáp hiệu dụng thì mất 1 lớp, hết thì hạ gục */
+  function dmg(t, L) { if (t.armor - L > 0) { t.armor--; return 0; } return 1; }
+  function hitMe(b) {
+    const d = dmg(me, b.L); fx(me.x, me.y); Snd.bad();
+    if (!solo) fb(TG('events/' + CODE), 'POST', { t: 'h', f: b.o, to: ME, d, ts: { '.sv': 'timestamp' } }).catch(() => {});
+    else { const bt = BOTS.find(x => x.id === b.o); if (bt) { bt.g += 100; if (d) bt.k++; } }
+    if (d) die(); else toast('🛡️ Giáp đỡ 1 phát! Còn ' + me.armor + ' lớp.'); save();
+  }
+  function hitBot(t, b) {
+    const d = dmg(t, b.L); fx(t.x, t.y); me.gold += 100; me.gt += 100; FX.push({ x: t.x, y: t.y - 30, t: 0, tx: '+100' }); Snd.step();
+    if (d) { me.k++; t.alive = false; t.rs = now() + 3500; toast('💥 Em hạ gục ' + t.name + '!', true); } save();
+  }
+  function die() { me.alive = false; me.d++; me.armor = 0; save(); askRespawn(false); }
+  function askRespawn(retry) {
+    if (phase !== 'play') return; const i = VALID[Math.random() * VALID.length | 0], q = norm(RAW[i]); q.idx = i;
+    showQ(q, ok => { if (phase !== 'play') return close_(); if (ok) { close_(); spawn(); toast('✅ Hồi sinh ở vị trí ngẫu nhiên!', true); } else askRespawn(true); },
+      `<div class="retry">${retry ? '↩️ Chưa đúng! Thử câu khác để hồi sinh.' : '💥 Xe tăng của em bị bắn hạ! Trả lời đúng để hồi sinh.'}</div>`);
+  }
+  function buy(k) {
+    if (shopAt(me.x, me.y) < 0 || !me.alive) return; const cur = k === 'a' ? me.armor : me.gun;
+    if (cur >= 3) return toast('Đã nâng tối đa.'); if (me.gold < COST) return toast('Chưa đủ vàng (cần ' + COST + ').');
+    me.gold -= COST; if (k === 'a') me.armor++; else me.gun++; Snd.power(); toast(k === 'a' ? '🛡️ Nâng giáp thành công!' : '🔫 Nâng súng thành công!', true); save();
+  }
+  $('#bA').onclick = () => buy('a'); $('#bG').onclick = () => buy('g');
+  function save() {
+    lastSave = performance.now(); if (phase !== 'play' && phase !== 'end') return;
+    fb(TG('players/' + CODE + '/' + ME), 'PATCH', { x: Math.round(me.x), y: Math.round(me.y), a: +me.a.toFixed(2), b: +me.b.toFixed(2), ar: me.armor, gu: me.gun, g: me.gold, gt: me.gt, k: me.k, d: me.d, al: me.alive ? 1 : 0 }).catch(() => {});
+  }
+
+  /* ---------- Vòng cập nhật máy chủ ---------- */
+  let ticking = false;
+  async function tick() {
+    if (ticking) return; ticking = true;
+    try {
+      const [s, p, ev] = await Promise.all([fb(TG('sessions/' + CODE)), fb(TG('players/' + CODE)), solo ? {} : fbEv(lastKey)]);
+      if (!s) { ticking = false; return gone('Phòng đã bị xoá.'); }
+      S = s; PL = p || {}; if (!PL[ME]) { ticking = false; return gone('Em đã được mời ra khỏi phòng.'); }
+      Object.keys(ev).sort().forEach(k => { if (seen.has(k)) return; seen.add(k); lastKey = k; onEv(ev[k]); });
+      Object.keys(PL).forEach(id => { if (id === ME || !PL[id] || !PL[id].name) return; const r = PL[id], t = TK[id] = TK[id] || { id, x: r.x || 0, y: r.y || 0, b: 0, a: 0 }; const nx = r.x || 0, ny = r.y || 0, tn = performance.now(); if (nx !== t.tx0 || ny !== t.ty0) { const sec = (tn - (t.pt || 0)) / 1000; if (t.pt && sec > .1 && sec < 1.5) { t.vx = (nx - t.tx0) / sec; t.vy = (ny - t.ty0) / sec; } else t.vx = t.vy = 0; t.tx0 = nx; t.ty0 = ny; t.tx = nx; t.ty = ny; t.pt = tn; if (!t.init) { t.x = nx; t.y = ny; t.init = 1; } }
+        Object.assign(t, { name: r.name, av: r.av, team: r.team == null ? -1 : r.team, armor: r.ar | 0, gun: r.gu | 0, alive: !!r.al, ta: r.a || 0, tb: r.b || 0 }); });
+      Object.keys(TK).forEach(id => { if (!PL[id]) delete TK[id]; });
+      if (S.status === 'ended' && phase !== 'end') finish(); else if (!solo && (phase === 'wait' || phase === 'join')) route();
+    } catch (_) {}
+    ticking = false;
+  }
+  function onEv(e) {
+    if (!e) return;
+    if (e.t === 'f' && e.f !== ME) mkBullet(e.f, e.tm, e.x, e.y, e.a, e.L, cl((now() - e.ts) / 1000, 0, .8));
+    else if (e.t === 'h') {
+      const v = e.to === ME ? me : TK[e.to]; if (v) fx(v.x, v.y);
+      if (e.f === ME) { me.gold += 100; me.gt += 100; if (e.d) { me.k++; toast('💥 Em hạ gục ' + ((PL[e.to] || {}).name || 'đối thủ') + '!', true); } FX.push({ x: v ? v.x : me.x, y: (v ? v.y : me.y) - 30, t: 0, tx: '+100' }); Snd.step(); save(); }
+    }
+  }
+  function gone(m) { clearInterval(TI); LS('tankGame', null); phase = 'end'; cv.style.display = 'none'; app.style.display = ''; close_(); app.innerHTML = `<div class="entry"><main class="ecard"><div class="ebadge">🚧</div><h2>${esc(m)}</h2><button class="ego" onclick="location.href='../../index.html'">Về trang nhập mã</button></main></div>`; }
+
+  /* ---------- Cập nhật mỗi khung hình ---------- */
+  function update(dt) {
+    const t = now(); if (t >= END || (S && S.status === 'ended')) return finish();
+    if (me.alive) {
+      let dx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0), dy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
+      const l = Math.hypot(dx, dy) || 1, k = 1 - Math.exp(-dt * (dx || dy ? 9 : 12));   /* tăng/giảm tốc mượt, không đổi hướng đột ngột */
+      me.vx = (me.vx || 0) + (dx / l * 190 - (me.vx || 0)) * k; me.vy = (me.vy || 0) + (dy / l * 190 - (me.vy || 0)) * k;
+      if (Math.hypot(me.vx, me.vy) > 8) { me.b = turn(me.b, Math.atan2(me.vy, me.vx), dt * 9); move(me, me.vx, me.vy, dt); }
+      me.a = Math.atan2(mouse.y - (me.y - cy), mouse.x - (me.x - cx));
+      if (mouse.d && t >= nextShot && shopAt(me.x, me.y) < 0) { nextShot = t + 650; fire(Object.assign(me, { id: ME }), true); }
+    }
+    const inShop = me.alive && shopAt(me.x, me.y) >= 0; $('#shop').style.display = inShop ? 'flex' : 'none';
+    if (inShop) { $('#bA').innerHTML = `🛡️ Nâng giáp [1] (${me.armor}/3)<small>${COST} vàng · chịu thêm 1 phát</small>`; $('#bG').innerHTML = `🔫 Nâng súng [2] (${me.gun}/3)<small>${COST} vàng · phá ${Math.min(3, me.gun + 1)} giáp</small>`; }
+    const all = solo ? BOTS : Object.values(TK);
+    for (const k of Object.values(TK)) {
+      if (performance.now() - k.pt < 900) { const nx = k.tx + (k.vx || 0) * dt, ny = k.ty + (k.vy || 0) * dt; if (!blocked(nx, k.ty, R)) k.tx = nx; if (!blocked(k.tx, ny, R)) k.ty = ny; }
+      const f = 1 - Math.exp(-dt * 10); k.x += (k.tx - k.x) * f; k.y += (k.ty - k.y) * f; k.a = turn(k.a, k.ta, dt * 14); k.b = turn(k.b, k.tb, dt * 14);
+    }
+    BOTS.forEach(b => botAI(b, dt, t));
+    for (let i = BU.length - 1; i >= 0; i--) {
+      const b = BU[i]; b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt; let dead = b.life <= 0 || blocked(b.x, b.y, 2);
+      if (dead && b.life > 0) fx(b.x, b.y);
+      if (!dead && b.o !== ME && me.alive && !sameTeam(b.tm, me.team) && shopAt(me.x, me.y) < 0 && t > me.inv && !paused && Math.hypot(b.x - me.x, b.y - me.y) < R + 3) { hitMe(b); dead = true; }
+      if (!dead && b.o === ME) for (const k of all) if (k.alive && !sameTeam(k.team, me.team) && shopAt(k.x, k.y) < 0 && Math.hypot(b.x - k.x, b.y - k.y) < R + 3) { if (k.bot) hitBot(k, b); else fx(k.x, k.y); dead = true; break; }
+      if (dead) BU.splice(i, 1);
+    }
+    FX.forEach(f => f.t += dt); FX = FX.filter(f => f.t < 1);
+    if (performance.now() - lastSave > (solo ? 3000 : 300)) save();
+    if (performance.now() - lastHud > 250) { lastHud = performance.now(); hud(); }
+  }
+  function botAI(b, dt, t) {
+    if (!b.alive) { if (t > b.rs) { [b.x, b.y] = spawnPos(); b.alive = true; b.armor = Math.random() < .4 ? 1 : 0; } return; }
+    const dx = me.x - b.x, dy = me.y - b.y, dist = Math.hypot(dx, dy), see = me.alive && dist < 620 && shopAt(me.x, me.y) < 0;
+    let tx, ty; if (see) { tx = me.x; ty = me.y; } else { if (!b.wp || t > b.wt || Math.hypot(b.wp[0] - b.x, b.wp[1] - b.y) < 40) { b.wp = spawnPos(); b.wt = t + 4000; } [tx, ty] = b.wp; }
+    if (!(see && dist < 230)) { const a = Math.atan2(ty - b.y, tx - b.x); b.b = turn(b.b, a, dt * 8); const ox = b.x, oy = b.y; move(b, Math.cos(a) * 115, Math.sin(a) * 115, dt); if (Math.abs(b.x - ox) + Math.abs(b.y - oy) < .1) b.wt = 0; }
+    b.a = Math.atan2(dy, dx) + (see ? rnd(-.18, .18) : 0); b.cd -= dt;
+    if (see && dist < 500 && b.cd <= 0) { b.cd = rnd(.9, 1.6); fire(b, false); }
+  }
+
+  /* ---------- Vẽ ---------- */
+  function tank(t, col, mine) {
+    c.save(); c.translate(t.x - cx, t.y - cy);
+    for (let i = 0; i < t.armor; i++) { c.strokeStyle = '#67e8f9'; c.lineWidth = 3; c.globalAlpha = .85; c.beginPath(); c.arc(0, 0, R + 5 + i * 5, 0, 7); c.stroke(); } c.globalAlpha = 1;
+    c.rotate(t.b); c.fillStyle = '#1c1f1a'; c.fillRect(-25, -22, 50, 8); c.fillRect(-25, 14, 50, 8); c.fillStyle = col; c.fillRect(-21, -14, 42, 28); c.fillStyle = '#0003'; c.fillRect(-21, 6, 42, 8);
+    c.rotate(t.a - t.b); c.fillStyle = ['#4b5563', '#f59e0b', '#f97316', '#ef4444'][t.gun | 0]; c.fillRect(4, -3.5 - (t.gun | 0) * .8, 34, 7 + (t.gun | 0) * 1.6);
+    c.fillStyle = '#e5e7eb'; c.beginPath(); c.arc(0, 0, 14, 0, 7); c.fill(); c.save(); c.beginPath(); c.arc(0, 0, 11.5, 0, 7); c.clip(); c.rotate(-t.a); const im = avi(t.av); if (im.complete && im.naturalWidth) c.drawImage(im, -12, -12, 24, 24); c.restore();
+    c.restore(); c.font = '800 14px "Be Vietnam Pro",sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#000b'; c.fillStyle = mine ? '#fde047' : '#fff'; const nx = t.x - cx, ny = t.y - cy - 36; c.strokeText(t.name || '', nx, ny); c.fillText(t.name || '', nx, ny);
+  }
+  const AI = {}; function avi(id) { if (!AI[id]) { const i = new Image(); i.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(avH(id).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ')); AI[id] = i; } return AI[id]; }
+  function draw() {
+    const gx = cl(me.x - cw / 2, 0, Math.max(0, W - cw)), gy = cl(me.y - ch / 2, 0, Math.max(0, HH - ch)), kc = camInit ? 1 - Math.exp(-lastDt * 12) : 1; camInit = 1;
+    cx = Math.round(cx + (gx - cx) * kc); cy = Math.round(cy + (gy - cy) * kc);
+    c.fillStyle = '#143014'; c.fillRect(0, 0, cw, ch); c.drawImage(TER, cx, cy, Math.min(cw, W), Math.min(ch, HH), 0, 0, Math.min(cw, W), Math.min(ch, HH));
+    const col = t => t.team >= 0 ? TC[t.team % 6] : t === me ? '#22c55e' : '#dc2626';
+    (solo ? BOTS : Object.values(TK)).forEach(t => { if (t.alive && t.x > cx - 80 && t.x < cx + cw + 80 && t.y > cy - 80 && t.y < cy + ch + 80) tank(t, col(t), false); });
+    if (me.alive) { if (now() < me.inv) c.globalAlpha = .55 + .25 * Math.sin(now() / 80); tank(me, col(me), true); c.globalAlpha = 1; }
+    BU.forEach(b => { c.fillStyle = '#fde047'; c.shadowColor = '#f59e0b'; c.shadowBlur = 8; c.beginPath(); c.arc(b.x - cx, b.y - cy, 4.5, 0, 7); c.fill(); c.shadowBlur = 0; });
+    FX.forEach(f => { if (f.tx) { c.font = '900 22px "Be Vietnam Pro",sans-serif'; c.fillStyle = '#fde047'; c.globalAlpha = 1 - f.t; c.textAlign = 'center'; c.fillText(f.tx, f.x - cx, f.y - cy - f.t * 40); c.globalAlpha = 1; } else { c.fillStyle = `rgba(255,${160 - f.t * 100 | 0},40,${1 - f.t})`; c.beginPath(); c.arc(f.x - cx, f.y - cy, 8 + f.t * 34, 0, 7); c.fill(); } });
+    if (!me.alive) { c.fillStyle = '#0006'; c.fillRect(0, 0, cw, ch); }
+  }
+  function loop(ts) { if (phase !== 'play') return; const dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts; lastDt = dt; if (!paused) update(dt); if (phase === 'play') { draw(); requestAnimationFrame(loop); } }
+
+  /* ---------- HUD & xếp hạng ---------- */
+  function board() {
+    const L = []; L.push({ name: me.name, av: me.av, g: me.gold, gt: me.gt, k: me.k, me: 1, team: me.team });
+    if (solo) BOTS.forEach(b => L.push({ name: b.name, av: b.av, g: b.g, gt: b.g, k: b.k, team: -1 }));
+    else Object.entries(PL).forEach(([id, r]) => { if (id !== ME && r && r.name) L.push({ name: r.name, av: r.av, g: r.g | 0, gt: r.gt | 0, k: r.k | 0, team: r.team == null ? -1 : r.team }); });
+    return L.sort((a, b) => b.k - a.k || b.g - a.g);
+  }
+  function hud() {
+    const left = Math.max(0, END - now()), m = Math.floor(left / 60000), s = Math.floor(left % 60000 / 1000);
+    $('#hl').innerHTML = `<span class="pl">💰 ${me.gold}</span><span class="pl">🛡️ ${me.armor}/3</span><span class="pl">🔫 ${me.gun}/3</span><span class="pl">💥 ${me.k}</span><span class="pl">⏱️ ${m}:${String(s).padStart(2, '0')}</span>`;
+    $('#hr').innerHTML = '<b style="display:block;margin-bottom:4px">🏆 Xếp hạng</b>' + board().slice(0, 6).map((r, i) => `<div class="${r.me ? 'me' : ''}"><span>${['🥇', '🥈', '🥉'][i] || i + 1}</span>${avOf(r.av)} ${r.team >= 0 ? `<i style="color:${TC[r.team % 6]}">●</i>` : ''}<span>${esc(r.name)}</span><b>💥${r.k} · 💰${r.g}</b></div>`).join('');
+  }
+
+  /* ---------- Kết thúc ---------- */
+  async function finish() {
+    if (phase === 'end') return; phase = 'end'; clearInterval(TI); close_(); Snd.music(false); Snd.win(); paused = false; me.alive = false; save();
+    cv.style.display = 'none'; ['hl', 'hr', 'shop'].forEach(i => $('#' + i).style.display = 'none'); $('#ovZ').style.display = 'none'; app.style.display = '';
+    try { PL = (await fb(TG('players/' + CODE))) || PL; } catch (_) {} if (!solo) PL[ME] = Object.assign({}, PL[ME], { g: me.gold, gt: me.gt, k: me.k });
+    const L = board(), rk = L.findIndex(r => r.me) + 1;
+    app.innerHTML = `<div class="entry"><main class="ecard wide" style="text-align:left"><div class="ebadge">🏁</div><h2 style="text-align:center">Hết giờ! Em xếp hạng ${rk <= 3 ? ['🥇', '🥈', '🥉'][rk - 1] : '#' + rk}</h2>
+      <p class="hint" style="text-align:center">💰 ${me.gold} vàng · 💥 ${me.k} lần hạ đối phương · ☠️ ${me.d} lần bị bắn hạ</p>
+      <table class="sumt"><tr><th>#</th><th>Người chơi</th><th>Hạ đối thủ</th><th>Vàng</th></tr>${L.map((r, i) => `<tr class="${r.me ? 'me' : ''}"><td>${i + 1}</td><td>${avOf(r.av)} ${esc(r.name)}</td><td>💥 ${r.k}</td><td>💰 ${r.g}</td></tr>`).join('')}</table>
+      <button class="ego" style="margin-top:12px" onclick="location.href='../../index.html'">Về trang nhập mã</button></main></div>`;
+  }
+
+  /* ---------- Khởi động (vào lại sau khi tải lại trang) ---------- */
+  (async function boot() {
+    if (!CODE) return location.replace('../../index.html');
+    app.innerHTML = '<div class="entry"><main class="ecard"><div class="ebadge">🪖</div><h2>Đang vào phòng…</h2></main></div>';
+    try {
+      const sv = LS('tankGame');
+      if (sv && sv.code === CODE && sv.rt) {
+        RT = sv.rt; ME = sv.id; await fbRefresh(); ME = sv.id;
+        const [s, m] = await Promise.all([fb(TG('sessions/' + CODE)), fb(TG('players/' + CODE + '/' + ME))]);
+        if (s && m && m.name && s.status !== 'ended') { S = s; return await enter(false); }
+      }
+      await fbAuth(); S = await fb(TG('sessions/' + CODE)); if (!S) return location.replace('../../index.html?code=' + CODE + '&re=1');
+      if (S.status === 'ended') return gone('Trận này đã kết thúc.'); PL = (await fb(TG('players/' + CODE))) || {}; showEntry();
+    } catch (e) { showEntry(e.message); }
+  })();
+})();
+</script>
+</body>
+</html>
