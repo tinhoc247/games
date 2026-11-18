@@ -35,7 +35,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:6px 8px;border-bottom:1p
   const toast = t => { const d = document.createElement('div'); d.textContent = t; $('#toast').appendChild(d); setTimeout(() => d.remove(), 4000); };
   const link = () => { const u = new URL('../../index.html', location.href); u.searchParams.set('code', CODE); return u.href; };
   function login(msg) {
-    app.innerHTML = `<div class="lg"><form id="f"><h2>🪖 Tank War – Admin</h2><input class="fld" id="pw" type="password" placeholder="Mật khẩu admin" autocomplete="current-password"><div class="err" id="er">${esc(msg || '')}</div><button class="ego">Đăng nhập</button></form></div>`;
+    app.innerHTML = `<div class="lg"><form id="f"><h2>💥 Tank War – Admin</h2><input class="fld" id="pw" type="password" placeholder="Mật khẩu admin" autocomplete="current-password"><div class="err" id="er">${esc(msg || '')}</div><button class="ego">Đăng nhập</button></form></div>`;
     $('#f').onsubmit = async e => { e.preventDefault(); ADMPW = $('#pw').value; try { TOK = null; await fbAuth(); keep(ADMPW); start(); } catch (x) { $('#er').textContent = x.message; } }; $('#pw').focus();
   }
   async function start() {
@@ -66,7 +66,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:6px 8px;border-bottom:1p
     if (key !== shell) {
       shell = key; const stT = { waiting: '⏳ Đang chờ', pre: '⏳ Chưa mở', running: solo ? '🏃 Đang mở' : '🔥 Đang đấu', ended: '🏁 Đã kết thúc' }[st] || st;
       const b = !CTL ? '' : st === 'waiting' ? '<button class="gr" id="bS">▶ Bắt đầu trận</button>' : (st === 'running' || st === 'pre') ? '<button class="rd" id="bE">⏹ ' + (solo ? 'Đóng bài tập' : 'Kết thúc') + '</button>' : '';
-      app.innerHTML = `<div class="top"><h1>🪖 ${esc(S.title || 'Tank War')}</h1><span class="code">${esc(CODE)}</span><span class="st">${stT}</span><span class="st" id="cnt"></span><span class="st">${solo ? 'Offline · ' + (+S.bots || 4) + ' xe máy' + (hw ? ' · mở ' + fm(S.start) + ' → đóng ' + fm(S.end) : '') : 'Nhiều người' + (+S.teams > 0 ? ' · ' + S.teams + ' đội' : ' · chơi đơn')} · ${+S.dur || 10} phút/lượt</span>
+      app.innerHTML = `<div class="top"><h1>💥 ${esc(S.title || 'Tank War')}</h1><span class="code">${esc(CODE)}</span><span class="st">${stT}</span><span class="st" id="cnt"></span><span class="st">${solo ? 'Offline · ' + (+S.bots || 4) + ' xe máy' + (hw ? ' · mở ' + fm(S.start) + ' → đóng ' + fm(S.end) : '') : 'Nhiều người' + (+S.teams > 0 ? ' · ' + S.teams + ' đội' : ' · chơi đơn')} · ${+S.dur || 10} phút/lượt</span><span class="st">${({ mix: '🗺️ Hỗn hợp', forest: '🌲 Rừng rậm', desert: '🏜️ Sa mạc', snow: '❄️ Tuyết nguyên', city: '🏙️ Thành phố', random: '🎲 Ngẫu nhiên', pick: '🙋 HS tự chọn' })[S.map || 'mix'] || '🗺️ Hỗn hợp'}</span>
         <button class="alt" id="bL">🔗 Chép link</button>${b}<button class="alt" id="bC">⬇ CSV</button></div>
         <div class="wrapA"><div class="panel"><h3>🏆 Bảng xếp hạng (số lần hạ đối thủ, rồi vàng đang có)</h3><div id="rk"></div></div>
         <div>${st === 'waiting' || st === 'pre' ? `<div class="panel"><h3>Mời học sinh vào</h3><div class="big2">${esc(CODE)}</div><p class="hint" style="text-align:center">Học sinh nhập mã ở trang chủ hoặc dùng link:<br><b style="word-break:break-all">${esc(link())}</b></p></div>` : ''}<div class="panel" id="tm"></div></div></div>`;

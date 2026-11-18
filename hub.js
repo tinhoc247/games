@@ -191,14 +191,15 @@
     }
     ,{
       id: 'tank-war', name: 'Tank War', icon: '💥', tone: '#3F6B2B',
-      tags: [['🎯', 'Bắn trúng đối phương: +100 vàng'], ['❤️', 'Bị hạ: trả lời câu hỏi để hồi sinh'], ['🔧', 'Về xưởng ở 4 góc: nâng giáp và súng'], ['🤖', '1 người: đấu xe tăng máy (bài tập về nhà)'], ['👥', 'Nhiều người: chơi đơn hoặc chia đội']],
-      blurb: 'Lái xe tăng nhìn từ trên xuống, bắn trúng đối phương được 100 vàng, bị hạ phải trả lời câu hỏi để hồi sinh. Về xưởng ở 4 góc để nâng giáp và súng. Chơi 1 người với xe máy (bài tập về nhà) hoặc nhiều người (chơi đơn / chia đội).',
+      tags: [['🎯', 'Bắn trúng đối phương: +100 vàng'], ['❤️', 'Bị hạ: trả lời câu hỏi để hồi sinh'], ['🗺️', 'Chọn chiến trường: rừng, sa mạc, tuyết, thành phố…'], ['🔧', 'Về xưởng ở 4 góc: nâng giáp và súng (hiện ngay trên xe)'], ['🤖', '1 người: đấu xe tăng máy (bài tập về nhà)'], ['👥', 'Nhiều người: chơi đơn hoặc chia đội']],
+      blurb: 'Lái xe tăng nhìn từ trên xuống, bắn trúng đối phương được 100 vàng, bị hạ phải trả lời câu hỏi để hồi sinh. Về xưởng ở 4 góc để nâng giáp và súng, cấp giáp và vũ khí hiện ngay trên xe. Chọn kiểu chiến trường khi tạo mã. Chơi 1 người với xe máy (bài tập về nhà) hoặc nhiều người (chơi đơn / chia đội).',
       dir: 'games/tank-war/', ns: 'tank/',
       match: k => !!k.game,
       options: [
         { key: 'mode', label: 'Chế độ chơi', type: 'select', def: 'multi', choices: [['multi', 'Online: cả lớp cùng đấu, có xếp hạng'], ['solo', 'Offline: bài tập về nhà, đấu với xe tăng máy, có báo cáo']] },
         { key: 'from', label: 'Mở từ', type: 'datetime', def: () => dt(Date.now()), showIf: o => o.mode === 'solo' },
         { key: 'to', label: 'Đóng lúc', type: 'datetime', def: () => dt(Date.now() + 7 * 864e5), showIf: o => o.mode === 'solo' },
+        { key: 'map', label: 'Kiểu chiến trường', type: 'select', def: 'mix', choices: [['mix', '🗺️ Hỗn hợp: rừng – đồng bằng – đồi núi'], ['forest', '🌲 Rừng rậm'], ['desert', '🏜️ Sa mạc'], ['snow', '❄️ Tuyết nguyên'], ['city', '🏙️ Thành phố đổ nát (nhà chắn đạn)'], ['random', '🎲 Ngẫu nhiên (mỗi mã một kiểu)'], ['pick', '🙋 Học sinh tự chọn (chỉ chế độ Offline)']] },
         { key: 'bots', label: 'Số xe tăng máy chơi chung', type: 'number', def: 4, min: 1, showIf: o => o.mode === 'solo' },
         { key: 'teams', label: 'Số đội (0 = mỗi bạn chơi đơn)', type: 'number', def: 0, min: 0, showIf: o => o.mode === 'multi' },
         { key: 'dur', label: 'Thời gian chơi (phút, mỗi lượt của từng bạn)', type: 'number', def: 10, min: 1 }
@@ -217,6 +218,7 @@
           code: c.code, title: c.title, mode: solo ? 'solo' : 'multi', status: solo ? 'running' : 'waiting',
           dur: Math.max(1, +o.dur || 10), bots: Math.max(1, +o.bots || 4), teams: solo ? 0 : Math.max(0, Math.min(6, +o.teams || 0)),
           seed: Math.random() * 2147483647 | 0, nq: c.nq, admin: c.me, created: c.now, lib: c.bank.id, game: 'tank-war',
+          map: (o.map === 'pick' && !solo) ? 'mix' : (o.map || 'mix'),
           ...(solo ? { start: st, end: en } : {})
         });
         return { control: 'admin.html?ctl=' + c.code };

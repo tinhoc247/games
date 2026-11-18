@@ -185,7 +185,17 @@ button.vkb{all:unset;box-sizing:border-box;position:absolute;right:8px;top:50%;t
 .opt,.tg2,.mr3{transition:background-color .18s,box-shadow .18s,transform .12s,opacity .18s}
 }
 </style>
-<link rel="stylesheet" href="../../fonts/vn-font.css"></head><body>
+<link rel="stylesheet" href="../../fonts/vn-font.css"><style id="avpick">
+/* ---- khung chọn nhân vật: rõ nét, tương phản cao (dùng chung mọi game) ---- */
+.avb{box-sizing:border-box!important;background:#fff!important;border:3px solid #64748b!important;border-radius:14px!important;box-shadow:0 3px 0 #334155!important;padding:2px;position:relative;transition:transform .12s,border-color .12s,box-shadow .12s,background .12s}
+.avb:not(:disabled):hover{border-color:#0f172a!important;transform:translateY(-2px)}
+.avb.on{border-color:#ea580c!important;background:#fff7ed!important;box-shadow:0 0 0 4px #fdba74,0 4px 0 #c2410c!important;transform:scale(1.08);z-index:2}
+.avb.on::after{content:"\2713";position:absolute;right:-8px;top:-8px;width:22px;height:22px;border-radius:50%;background:#ea580c;color:#fff;font:900 14px/18px system-ui,sans-serif;text-align:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.avb:disabled{opacity:.4!important;filter:grayscale(1) contrast(.85)!important;border-style:dashed!important;box-shadow:none!important;transform:none!important}
+div.avs{background:#e2e8f0;border:2px solid #94a3b8;border-radius:16px;padding:12px!important;gap:9px!important}
+.ecard .hint{color:#334155;font-weight:600}
+</style>
+</head><body>
 
 <div id="setup"><div class="setup">
  <div style="grid-column:1/-1"><h1>🏝️ Truy Tìm Kho Báu</h1></div>
@@ -210,7 +220,7 @@ button.vkb{all:unset;box-sizing:border-box;position:absolute;right:8px;top:50%;t
 <div id="gamev" style="display:none"><div class="game"><div class="mapw"><svg id="map" viewBox="0 0 800 600"></svg></div>
 <div class="side"><div id="teamList"></div>
  <div class="card"><div id="turn" style="font-weight:700;margin-bottom:6px"></div><div id="act"></div><div id="log"></div></div>
- <button class="alt" id="mus" onclick="toggleMusic()">🎵 Nhạc: Bật</button><button class="alt" onclick="location.reload()">↺ Cài đặt lại</button><details class="card" id="guide" style="font-size:13px;line-height:1.5"><summary style="font-weight:800;cursor:pointer">📖 Hướng dẫn cách chơi</summary><ol style="margin:6px 0 0;padding-left:18px"><li><b>Mục tiêu:</b> về đích 💰 kho báu trước.</li><li>Đến lượt, bấm <b>🎯 Trả lời câu hỏi</b>. Đúng: +50 vàng, tiến 1 trạm và mở 1 rương. Sai: mất lượt.</li><li><b>Rương</b> có thể là vàng, nhân đôi hoặc mất nửa vàng, rương rỗng, hoặc năng lực: 🛡️ vượt nguy hiểm, 🚀 tiến thêm 1 trạm, ❄️ đóng băng đối phương, ⏪ kéo đối phương lùi 1 hoặc 2 bước. Người bị đóng băng được thông báo và phải trả lời đúng 1 câu để rã băng; người bị kéo lùi phải trả lời đúng để tiếp tục tiến lên.</li><li><b>Chướng ngại</b> (🕳️ 🌲 🐍 🌊 🔥…): dùng đúng vật dụng hoặc trả lời đúng câu hỏi để vượt. Vượt xong, tại trạm phải trả lời thêm 1 câu: đúng mới mở rương, sai thì trả lời lại. Không vượt được thì đứng yên.</li><li><b>🏪 Cửa hàng:</b> dùng vàng mua vật dụng (🏹 🦺 🌉 🧭 🛶 🥾), có thể mở ngay khi gặp chướng ngại.</li></ol></details></div></div></div>
+ <button class="alt" id="mus" onclick="toggleMusic()">🎵 Nhạc: Bật</button><button class="alt" onclick="location.reload()">↺ Cài đặt lại</button><details class="card" id="guide" style="font-size:13px;line-height:1.5"><summary style="font-weight:800;cursor:pointer">📖 Hướng dẫn cách chơi</summary><ol style="margin:6px 0 0;padding-left:18px"><li><b>Mục tiêu:</b> về đích 💰 kho báu trước.</li><li>Đến lượt, bấm <b>🎯 Trả lời câu hỏi</b>. Đúng: +50 vàng, tiến 1 trạm và mở 1 rương. Sai: <b>bắt buộc trả lời lại đúng câu đó</b> (đáp án xáo lại) cho tới khi đúng mới đi tiếp; câu làm lại không có vàng.</li><li><b>Rương</b> có thể là vàng, nhân đôi hoặc mất nửa vàng, rương rỗng, hoặc năng lực: 🛡️ vượt nguy hiểm, 🚀 tiến thêm 1 trạm, ❄️ đóng băng đối phương, ⏪ kéo đối phương lùi 1 hoặc 2 bước. Người bị đóng băng được thông báo và phải trả lời đúng 1 câu để rã băng; người bị kéo lùi phải trả lời đúng để tiếp tục tiến lên.</li><li><b>Chướng ngại</b> (🕳️ 🌲 🐍 🌊 🔥…): dùng đúng vật dụng hoặc trả lời đúng câu hỏi để vượt. Câu hỏi chướng ngại hay câu hỏi rã băng nếu sai đều phải trả lời lại đúng câu đó mới đi tiếp. Vượt xong, tại trạm phải trả lời thêm 1 câu: đúng mới mở rương.</li><li><b>🏪 Cửa hàng:</b> dùng vàng mua vật dụng (🏹 🦺 🌉 🧭 🛶 🥾), có thể mở ngay khi gặp chướng ngại.</li></ol></details></div></div></div>
 <div id="modal"><div class="box" id="mbox"></div></div>
 
 <script>
@@ -436,12 +446,11 @@ function mainRes(ok){const t=T[cur];XD=false;if(ok&&!RTRY)t.gold+=50;
 const CHEST_H=()=>`<h3>🎉 Chính xác! Chọn 1 rương kho báu</h3><div class="mirrors">${[0,1,2].map(()=>`<button class="mirror" onclick="openChest(this)">${CHC}</button>`).join('')}</div>`;
 function chestQ(){log(`🚧 ${W(T[cur])} vượt chướng ngại, trả lời thêm 1 câu để mở rương`);info(`<div class="big">🚧</div><h3>Bạn đã vượt chướng ngại vật!</h3><p>Trả lời đúng câu hỏi tại trạm này để mở rương.</p>`,askChest)}
 function askChest(){ask(ok=>{if(ok){log(`✅ ${W(T[cur])} trả lời đúng, mở rương!`);modal(CHEST_H())}else info(`<div class="big">🔁</div><h3>Chưa đúng! Hãy trả lời lại để mở rương.</h3>`,askChest)})}
-/* Offline (bài tập về nhà): trả lời sai phải làm lại ĐÚNG câu đó (đáp án xáo lại) cho đến khi đúng mới đi tiếp.
+/* Mọi chế độ (online, offline, giáo viên chiếu lớp): trả lời sai thì BẮT BUỘC làm lại ĐÚNG câu đó (đáp án xáo lại) cho đến khi đúng mới đi tiếp.
    Lần sai đầu tiên vẫn tính vào báo cáo; các lần làm lại không tính và không được +50 vàng. */
 var RTRY=false;
 function OFFL(){try{return !!(SES&&SES.mode=='offline')}catch(e){return false}}
 function ask(cb,pre,use,dn){RTRY=false;
- if(!OFFL())return showQ(pickQ(),cb,pre,use,dn);
  const q=pickQ(),again=()=>{const done=o=>{if(o){RTRY=true;cb(true)}else redo()};showQ(shOpt(q),done,pre,use,dn);CB=done},
   redo=()=>info('<div class="big">🔁</div><h3>Chưa đúng! Hãy trả lời lại câu này.</h3>',again);
  showQ(q,o=>{if(o)cb(true);else redo()},pre,use,dn)}

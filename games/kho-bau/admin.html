@@ -275,7 +275,7 @@ button.vkb{all:unset;box-sizing:border-box;position:absolute;right:8px;top:50%;t
 <div id="gamev" style="display:none"><div class="game"><div class="mapw"><svg id="map" viewBox="0 0 800 600"></svg></div>
 <div class="side"><div id="teamList"></div>
  <div class="card"><div id="turn" style="font-weight:700;margin-bottom:6px"></div><div id="act"></div><div id="log"></div></div>
- <button class="alt" id="mus" onclick="toggleMusic()">🎵 Nhạc: Bật</button><button class="alt" onclick="location.reload()">↺ Cài đặt lại</button><details class="card" id="guide" style="font-size:13px;line-height:1.5"><summary style="font-weight:800;cursor:pointer">📖 Hướng dẫn cách chơi</summary><ol style="margin:6px 0 0;padding-left:18px"><li><b>Mục tiêu:</b> về đích 💰 kho báu trước.</li><li>Đến lượt, bấm <b>🎯 Trả lời câu hỏi</b>. Đúng: +50 vàng, tiến 1 trạm và mở 1 rương. Sai: mất lượt.</li><li><b>Rương</b> có thể là vàng, nhân đôi hoặc mất nửa vàng, rương rỗng, hoặc năng lực: 🛡️ vượt nguy hiểm, 🚀 tiến thêm 1 trạm, ❄️ đóng băng đối phương, ⏪ kéo đối phương lùi 1 hoặc 2 bước. Người bị đóng băng được thông báo và phải trả lời đúng 1 câu để rã băng; người bị kéo lùi phải trả lời đúng để tiếp tục tiến lên.</li><li><b>Chướng ngại</b> (🕳️ 🌲 🐍 🌊 🔥…): dùng đúng vật dụng hoặc trả lời đúng câu hỏi để vượt. Vượt xong, tại trạm phải trả lời thêm 1 câu: đúng mới mở rương, sai thì trả lời lại. Không vượt được thì đứng yên.</li><li><b>🏪 Cửa hàng:</b> dùng vàng mua vật dụng (🏹 🦺 🌉 🧭 🛶 🥾), có thể mở ngay khi gặp chướng ngại.</li></ol></details></div></div></div>
+ <button class="alt" id="mus" onclick="toggleMusic()">🎵 Nhạc: Bật</button><button class="alt" onclick="location.reload()">↺ Cài đặt lại</button><details class="card" id="guide" style="font-size:13px;line-height:1.5"><summary style="font-weight:800;cursor:pointer">📖 Hướng dẫn cách chơi</summary><ol style="margin:6px 0 0;padding-left:18px"><li><b>Mục tiêu:</b> về đích 💰 kho báu trước.</li><li>Đến lượt, bấm <b>🎯 Trả lời câu hỏi</b>. Đúng: +50 vàng, tiến 1 trạm và mở 1 rương. Sai: <b>bắt buộc trả lời lại đúng câu đó</b> (đáp án xáo lại) cho tới khi đúng mới đi tiếp; câu làm lại không có vàng.</li><li><b>Rương</b> có thể là vàng, nhân đôi hoặc mất nửa vàng, rương rỗng, hoặc năng lực: 🛡️ vượt nguy hiểm, 🚀 tiến thêm 1 trạm, ❄️ đóng băng đối phương, ⏪ kéo đối phương lùi 1 hoặc 2 bước. Người bị đóng băng được thông báo và phải trả lời đúng 1 câu để rã băng; người bị kéo lùi phải trả lời đúng để tiếp tục tiến lên.</li><li><b>Chướng ngại</b> (🕳️ 🌲 🐍 🌊 🔥…): dùng đúng vật dụng hoặc trả lời đúng câu hỏi để vượt. Câu hỏi chướng ngại hay câu hỏi rã băng nếu sai đều phải trả lời lại đúng câu đó mới đi tiếp. Vượt xong, tại trạm phải trả lời thêm 1 câu: đúng mới mở rương.</li><li><b>🏪 Cửa hàng:</b> dùng vàng mua vật dụng (🏹 🦺 🌉 🧭 🛶 🥾), có thể mở ngay khi gặp chướng ngại.</li></ol></details></div></div></div>
 <div id="modal"><div class="box" id="mbox"></div></div>
 
 <script>
@@ -490,7 +490,7 @@ function step(cb){const t=T[cur],n=P[t.path].nodes[t.pos+1];
  if(t.shield>0){t.shield--;XD=true;t.pos++;render();log(`🛡️ ${W(t)} vượt ${n.d[1]}`);return info(`<div class="big">🛡️</div><h3>Bạn dùng năng lực vượt qua ${n.d[1]}!</h3>`,()=>step(cb))}
  ask(ok=>{if(ok){XD=true;t.pos++;render();const iu=IU;IU=null;log(iu?`${iu[0]} ${t.name} dùng ${iu[1]} vượt ${n.d[1]}`:`💪 ${t.name} vượt qua ${n.d[1]}`);info(iu?`<div class="big">${iu[0]}</div><h3>Dùng ${iu[1]} để vượt ${n.d[1]}!</h3>`:`<div class="big">💪</div><h3>Vượt qua ${n.d[1]} thành công!</h3>`,()=>step(cb))}
   else{log(`${n.d[0]} ${W(t)} không vượt được, đứng yên`);cb('stay')}},pre,n.d[2].filter(k=>t.inv[k]>0),n)}
-function mainRes(ok){const t=T[cur];XD=false;if(ok)t.gold+=50;
+function mainRes(ok){const t=T[cur];XD=false;if(ok&&!RTRY)t.gold+=50;
  if(!ok){log(`❌ ${W(t)} trả lời sai, mất lượt`);return info(`<div class="big">😢</div><h3>Sai rồi! Bạn mất lượt</h3>`,nextTurn)}
  step(r=>{if(r=='win')return win();
   if(r=='stay')return info(`<div class="big">🧱</div><h3>Bạn chưa vượt được nguy hiểm, đứng yên tại chỗ</h3>`,nextTurn);
@@ -501,7 +501,13 @@ function mainRes(ok){const t=T[cur];XD=false;if(ok)t.gold+=50;
 const CHEST_H=()=>`<h3>🎉 Chính xác! Chọn 1 rương kho báu</h3><div class="mirrors">${[0,1,2].map(()=>`<button class="mirror" onclick="openChest(this)">${CHC}</button>`).join('')}</div>`;
 function chestQ(){log(`🚧 ${W(T[cur])} vượt chướng ngại, trả lời thêm 1 câu để mở rương`);info(`<div class="big">🚧</div><h3>Bạn đã vượt chướng ngại vật!</h3><p>Trả lời đúng câu hỏi tại trạm này để mở rương.</p>`,askChest)}
 function askChest(){ask(ok=>{if(ok){log(`✅ ${W(T[cur])} trả lời đúng, mở rương!`);modal(CHEST_H())}else info(`<div class="big">🔁</div><h3>Chưa đúng! Hãy trả lời lại để mở rương.</h3>`,askChest)})}
-function ask(cb,pre,use,dn){showQ(pickQ(),cb,pre,use,dn)}
+/* Mọi chế độ (online, offline, giáo viên chiếu lớp): trả lời sai thì BẮT BUỘC làm lại ĐÚNG câu đó (đáp án xáo lại) cho đến khi đúng mới đi tiếp.
+   Lần sai đầu tiên vẫn tính vào báo cáo; các lần làm lại không tính và không được +50 vàng. */
+var RTRY=false;
+function ask(cb,pre,use,dn){RTRY=false;
+ const q=pickQ(),again=()=>{const done=o=>{if(o){RTRY=true;cb(true)}else redo()};showQ(shOpt(q),done,pre,use,dn);CB=done},
+  redo=()=>info('<div class="big">🔁</div><h3>Chưa đúng! Hãy trả lời lại câu này.</h3>',again);
+ showQ(q,o=>{if(o)cb(true);else redo()},pre,use,dn)}
 function showQ(q,cb,pre,use,dn){DQ=dn?{q,cb,pre,dn}:null;RCB=cb;IU=null;CB=o=>{ST[o?'ok':'bad']++;H.push({q,o,w:T[cur].name});window.SYNC&&SYNC(q,o);cb(o)};const ty=q.ty||'single';CQ=q;q.sel=-1;q.locked=false;q.pp=null;
  const ps=q.imgPos,im=q.img&&ty!='pt'?imgH(q.img):'',qt=`<h3>${esc(q.q||'')}</h3>`;
  let h=`${pre||''}${dn?useBar(use||[],dn):''}`+(ps=='left'||ps=='right'?`<div style="display:flex;gap:10px;align-items:center;flex-direction:${ps=='left'?'row':'row-reverse'}"><div style="flex:0 0 42%">${im}</div><div style="flex:1">${qt}</div></div>`:qt+im);

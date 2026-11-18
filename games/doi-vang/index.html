@@ -176,7 +176,17 @@ body:has(.entry.gold){background:linear-gradient(135deg,#ffd43b,#ff922b 48%,#f06
 .opt,.tg2,.mr3{transition:background-color .18s,box-shadow .18s,transform .12s,opacity .18s}
 }
 </style>
-<link rel="stylesheet" href="../../fonts/vn-font.css"></head><body><div class="wrap" id="app"></div><div id="toast"></div><div id="modal"><div class="box" id="mbox"></div></div><script>
+<link rel="stylesheet" href="../../fonts/vn-font.css"><style id="avpick">
+/* ---- khung chọn nhân vật: rõ nét, tương phản cao (dùng chung mọi game) ---- */
+.avb{box-sizing:border-box!important;background:#fff!important;border:3px solid #64748b!important;border-radius:14px!important;box-shadow:0 3px 0 #334155!important;padding:2px;position:relative;transition:transform .12s,border-color .12s,box-shadow .12s,background .12s}
+.avb:not(:disabled):hover{border-color:#0f172a!important;transform:translateY(-2px)}
+.avb.on{border-color:#ea580c!important;background:#fff7ed!important;box-shadow:0 0 0 4px #fdba74,0 4px 0 #c2410c!important;transform:scale(1.08);z-index:2}
+.avb.on::after{content:"\2713";position:absolute;right:-8px;top:-8px;width:22px;height:22px;border-radius:50%;background:#ea580c;color:#fff;font:900 14px/18px system-ui,sans-serif;text-align:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.avb:disabled{opacity:.4!important;filter:grayscale(1) contrast(.85)!important;border-style:dashed!important;box-shadow:none!important;transform:none!important}
+#avs{background:#e2e8f0;border:2px solid #94a3b8;border-radius:16px;padding:12px!important;gap:9px!important}
+.ecard .hint{color:#334155;font-weight:600}
+</style>
+</head><body><div class="wrap" id="app"></div><div id="toast"></div><div id="modal"><div class="box" id="mbox"></div></div><script>
 
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const CFG=window.FBCFG,ADM=window.APPMODE=='admin';let TOK=null,RT=null,ME=null,ADMPW=null,OFF=0,busy=false,DRG=-1,SK=0,CQ=null,CB=null,RCB=null,IU=null,DQ=null,H=[],ST={ok:0,bad:0},T=[{name:''}],cur=0,Q=[],CUR=[],RAW=null;const IM={},HW={on:false};
