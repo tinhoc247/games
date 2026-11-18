@@ -196,18 +196,28 @@
       dir: 'games/tank-war/', ns: 'tank/',
       match: k => !!k.game,
       options: [
-        { key: 'mode', label: 'Chế độ chơi', type: 'select', def: 'multi', choices: [['multi', 'Nhiều người: cả lớp cùng đấu, có xếp hạng'], ['solo', '1 người: bài tập về nhà, đấu với xe tăng máy']] },
+        { key: 'mode', label: 'Chế độ chơi', type: 'select', def: 'multi', choices: [['multi', 'Online: cả lớp cùng đấu, có xếp hạng'], ['solo', 'Offline: bài tập về nhà, đấu với xe tăng máy, có báo cáo']] },
+        { key: 'from', label: 'Mở từ', type: 'datetime', def: () => dt(Date.now()), showIf: o => o.mode === 'solo' },
+        { key: 'to', label: 'Đóng lúc', type: 'datetime', def: () => dt(Date.now() + 7 * 864e5), showIf: o => o.mode === 'solo' },
         { key: 'bots', label: 'Số xe tăng máy chơi chung', type: 'number', def: 4, min: 1, showIf: o => o.mode === 'solo' },
         { key: 'teams', label: 'Số đội (0 = mỗi bạn chơi đơn)', type: 'number', def: 0, min: 0, showIf: o => o.mode === 'multi' },
-        { key: 'dur', label: 'Thời gian chơi (phút)', type: 'number', def: 10, min: 1 }
+        { key: 'dur', label: 'Thời gian chơi (phút, mỗi lượt của từng bạn)', type: 'number', def: 10, min: 1 }
       ],
       async create(c) {
         const o = c.o, solo = o.mode === 'solo';
+        let st = 0, en = 0;
+        if (solo) {
+          st = new Date(o.from).getTime(); en = new Date(o.to).getTime();
+          if (!(st > 0) || !(en > 0)) throw Error('Chọn thời điểm mở và đóng cho bài tập.');
+          if (en <= st) throw Error('Thời điểm đóng phải sau thời điểm mở.');
+          if (en <= c.now) throw Error('Thời điểm đóng đã qua.');
+        }
         await fb('tank/quiz/' + c.code, 'PUT', c.qs);
         await fb('tank/sessions/' + c.code, 'PUT', {
           code: c.code, title: c.title, mode: solo ? 'solo' : 'multi', status: solo ? 'running' : 'waiting',
           dur: Math.max(1, +o.dur || 10), bots: Math.max(1, +o.bots || 4), teams: solo ? 0 : Math.max(0, Math.min(6, +o.teams || 0)),
-          seed: Math.random() * 2147483647 | 0, nq: c.nq, admin: c.me, created: c.now, lib: c.bank.id, game: 'tank-war'
+          seed: Math.random() * 2147483647 | 0, nq: c.nq, admin: c.me, created: c.now, lib: c.bank.id, game: 'tank-war',
+          ...(solo ? { start: st, end: en } : {})
         });
         return { control: 'admin.html?ctl=' + c.code };
       }
@@ -496,6 +506,7 @@
       if (s.mode === 'offline') return now > s.end ? 'ended' : now < s.start ? 'waiting' : 'running';
       return s.status === 'ended' || (s.end && now > s.end + 3e5) ? 'ended' : s.status === 'running' ? 'running' : 'waiting';
     }
+    if (g.id === 'tank-war' && s.mode === 'solo' && s.start && s.end && s.status !== 'ended') return now > s.end ? 'ended' : now < s.start ? 'waiting' : 'running';
     return s.status === 'ended' || (s.status === 'running' && s.end && now >= s.end) ? 'ended' : s.status === 'running' ? 'running' : 'waiting';
   }
   /* Vùng gốc (Kho báu): mỗi phiên chứa cả bộ câu hỏi (q), tải hết sẽ rất nặng.
@@ -592,35 +603,7 @@
   /* link có kèm game (g=...) thì biết ngay game nào, không cần tra mã trên mạng */
   const quick = (code, gid) => { const g = GAMES.find(x => x.id === gid); code = String(code || '').trim().toUpperCase(); return g && /^[A-Z0-9]{3,8}$/.test(code) ? { game: g, code, url: g.dir + 'index.html?code=' + code } : null; };
 
-  /* ---------- Cập nhật theo file ("bản vá" lưu trên Firebase, patch.js nạp lúc mở trang) ---------- */
-  const pKey = p => encodeURIComponent(p).replace(/\./g, '%2E');
-  const pNorm = s => String(s).replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
-  const pHash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
-  const patches = {
-    /* file chữ trên hosting có thể cập nhật bằng bản vá (thêm file mới vào đây nếu có) */
-    KNOWN: ["index.html", "admin.html", "hub.js", "vk.js", "quota.js", "games/bao-ve/admin.html", "games/bao-ve/index.html", "games/chay-dua/admin.html", "games/chay-dua/index.html", "games/chay-dua/qbase.css", "games/chay-dua/race-q.js", "games/chay-dua/race.css", "games/chay-dua/race.js", "games/doi-vang/admin.html", "games/doi-vang/index.html", "games/kho-bau/admin.html", "games/kho-bau/index.html", "games/tank-war/admin.html", "games/tank-war/index.html", "fonts/vn-font.css"],
-    MAX: 1500000,
-    key: pKey, norm: pNorm, hash: pHash,
-    async list() { return (await fb('patchmeta', 'GET')) || {}; },
-    async put(path, text) {
-      const t = pNorm(text), k = pKey(path), now = Date.now();
-      if (t.length > patches.MAX) throw Error('File quá lớn (tối đa ~1,5 MB).');
-      await fb('patches/' + k, 'PUT', { p: path, c: t, t: now });          /* nội dung trước, danh mục sau */
-      await fb('patchmeta/' + k, 'PUT', { p: path, t: now, n: t.length, h: pHash(t) });
-    },
-    async del(path) {
-      const k = pKey(path);
-      await fb('patchmeta/' + k, 'DELETE');                                  /* danh mục trước, nội dung sau */
-      await fb('patches/' + k, 'DELETE');
-    },
-    async deployed(path) {                                                   /* bản đang deploy trên hosting (null nếu không có) */
-      try {
-        const r = await fetch(path + '?_=' + Date.now(), { cache: 'no-store' });
-        return r.ok ? pNorm(await r.text()) : null;
-      } catch (_) { return null; }
-    }
-  };
 
-  window.Hub = { patches, GAMES, warm, login, restore, logout, listBanks, legacyCount, migrateLegacy, createSession, recent, forget, codeStatus, resolve, quick, studentLink,
+  window.Hub = { GAMES, warm, login, restore, logout, listBanks, legacyCount, migrateLegacy, createSession, recent, forget, codeStatus, resolve, quick, studentLink,
     readQFile, buildQs, imgPaths, indexImages, findImg, saveBank, renameBank, deleteBank, listSessions, deleteSession, cleanTs };
 })();

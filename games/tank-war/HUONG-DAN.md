@@ -6,7 +6,7 @@ Xe tăng nhìn từ trên xuống, dùng chung thư viện câu hỏi của hub.
 1. Dashboard chung → chọn bộ câu hỏi → game **Tank War** → chỉnh cài đặt → **Tạo mã**.
 2. **Chế độ**
    - **Nhiều người**: học sinh vào bằng mã, chờ thầy/cô bấm **▶ Bắt đầu** (đếm ngược 3-2-1 đồng bộ). Chơi đơn hoặc chia **N đội** (xếp vòng theo thứ tự vào phòng, không bắn nhầm đồng đội). Hết giờ phòng điều khiển tự kết thúc.
-   - **1 người (bài tập về nhà)**: mã mở sẵn; mỗi bạn chơi một mình đấu với **số xe tăng máy** do thầy/cô chọn. Đồng hồ chạy riêng cho từng bạn từ lúc vào trận (tải lại trang không làm lại giờ). Điểm của từng bạn nằm trong bảng ở phòng điều khiển / CSV.
+   - **Offline (bài tập về nhà)**: thầy/cô chọn **Mở từ – Đóng lúc**; ngoài khung giờ này học sinh không vào mới được (bạn đã vào trận trước giờ đóng vẫn chơi nốt lượt của mình). Thời gian chơi là của **mỗi lượt từng bạn**. Mã mở trong khung giờ; mỗi bạn chơi một mình đấu với **số xe tăng máy** do thầy/cô chọn. Đồng hồ chạy riêng cho từng bạn từ lúc vào trận (tải lại trang không làm lại giờ). Điểm của từng bạn nằm trong bảng ở phòng điều khiển / CSV.
 3. **Xếp hạng**: theo **số lần hạ đối thủ**, hòa thì xét **vàng đang có**. Chế độ chia đội cộng điểm theo cùng thứ tự.
 
 ## Luật chơi

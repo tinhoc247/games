@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head><script src="../../patch.js"></script><script src="../../quota.js"></script>
+<head><script src="../../quota.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tank War</title>
@@ -100,11 +100,20 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     $('#jB').disabled = true; er('Đang vào…'); Snd.unlock();
     try {
       S = await fb(TG('sessions/' + CODE)); if (!S) throw Error('Phòng không còn tồn tại.'); if (S.status === 'ended') throw Error('Trận này đã kết thúc.');
+      hwCheck(S);
       PL = (await fb(TG('players/' + CODE))) || {};
       const team = +S.teams > 0 && S.mode !== 'solo' ? Object.keys(PL).length % (+S.teams) : -1;
       await fb(TG('players/' + CODE + '/' + ME), 'PUT', { name, av: joinAv, team, g: 0, gt: 0, k: 0, d: 0, ar: 0, gu: 0, al: 0, joined: Date.now() });
       LS('tankGame', { code: CODE, id: ME, rt: RT }); await enter(true);
     } catch (e) { $('#jB').disabled = false; er(e.message); }
+  }
+  /* Bài tập về nhà: chỉ cho vào trong khoảng [start, end] (giờ máy chủ ≈ giờ máy + OFF) */
+  const hwFmt = t => new Date(t).toLocaleString('vi-VN', { hour12: false, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  function hwCheck(s) {
+    if (!s || s.mode !== 'solo' || !(+s.start > 0) || !(+s.end > 0)) return;
+    const t = Date.now() + (OFF || 0);
+    if (t < +s.start) throw Error('Bài tập chưa mở. Em quay lại sau ' + hwFmt(+s.start) + ' nhé.');
+    if (t > +s.end) throw Error('Bài tập đã đóng lúc ' + hwFmt(+s.end) + '.');
   }
   async function enter(fresh) {
     S = (await fb(TG('sessions/' + CODE))) || S; solo = S.mode === 'solo';
@@ -113,6 +122,7 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     build(+S.seed || (CODE.charCodeAt(0) * 7919 + CODE.charCodeAt(1) * 104729));
     OFF = await fbClockOffset(TG('players/' + CODE + '/' + ME));
     const m = (await fb(TG('players/' + CODE + '/' + ME))) || {};
+    if (!(m.t0 > 0)) hwCheck(S);   /* bạn đã vào trận từ trước vẫn được chơi nốt lượt của mình */
     Object.assign(me, { name: m.name, av: m.av, team: m.team == null ? -1 : m.team, gold: m.g | 0, gt: m.gt | 0, k: m.k | 0, d: m.d | 0, armor: m.ar | 0, gun: m.gu | 0, id: ME });
     const e0 = await fbEv(''); Object.keys(e0).forEach(k => seen.add(k)); lastKey = Object.keys(e0).sort().pop() || '';
     clearInterval(TI); TI = setInterval(tick, solo ? 4000 : 700); await tick();

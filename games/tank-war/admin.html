@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head><script src="../../patch.js"></script><script src="../../quota.js"></script>
+<head><script src="../../quota.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tank War – Điều khiển</title>
@@ -59,14 +59,17 @@ table{width:100%;border-collapse:collapse}td,th{padding:6px 8px;border-bottom:1p
     const b = new Blob(['﻿' + r.map(a => a.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n')], { type: 'text/csv' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'tank-war-' + CODE + '.csv'; a.click();
   }
   function draw() {
-    if (!S) return; const st = S.status, solo = S.mode === 'solo', key = [st, S.title, CTL].join('|');
+    if (!S) return; const solo = S.mode === 'solo', hw = solo && +S.start > 0 && +S.end > 0, tn = Date.now();
+    /* bài tập về nhà: trạng thái theo khung giờ mở/đóng; 'pre' = chưa đến giờ mở (không có nút Bắt đầu) */
+    const st = S.status === 'ended' ? 'ended' : hw ? (tn > +S.end ? 'ended' : tn < +S.start ? 'pre' : 'running') : S.status, key = [st, S.title, CTL].join('|');
+    const fm = t => new Date(+t).toLocaleString('vi-VN', { hour12: false, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
     if (key !== shell) {
-      shell = key; const stT = { waiting: '⏳ Đang chờ', running: solo ? '🏃 Đang mở' : '🔥 Đang đấu', ended: '🏁 Đã kết thúc' }[st] || st;
-      const b = !CTL ? '' : st === 'waiting' ? '<button class="gr" id="bS">▶ Bắt đầu trận</button>' : st === 'running' ? '<button class="rd" id="bE">⏹ Kết thúc</button>' : '';
-      app.innerHTML = `<div class="top"><h1>🪖 ${esc(S.title || 'Tank War')}</h1><span class="code">${esc(CODE)}</span><span class="st">${stT}</span><span class="st" id="cnt"></span><span class="st">${solo ? '1 người · ' + (+S.bots || 4) + ' xe máy' : 'Nhiều người' + (+S.teams > 0 ? ' · ' + S.teams + ' đội' : ' · chơi đơn')} · ${+S.dur || 10} phút</span>
+      shell = key; const stT = { waiting: '⏳ Đang chờ', pre: '⏳ Chưa mở', running: solo ? '🏃 Đang mở' : '🔥 Đang đấu', ended: '🏁 Đã kết thúc' }[st] || st;
+      const b = !CTL ? '' : st === 'waiting' ? '<button class="gr" id="bS">▶ Bắt đầu trận</button>' : (st === 'running' || st === 'pre') ? '<button class="rd" id="bE">⏹ ' + (solo ? 'Đóng bài tập' : 'Kết thúc') + '</button>' : '';
+      app.innerHTML = `<div class="top"><h1>🪖 ${esc(S.title || 'Tank War')}</h1><span class="code">${esc(CODE)}</span><span class="st">${stT}</span><span class="st" id="cnt"></span><span class="st">${solo ? 'Offline · ' + (+S.bots || 4) + ' xe máy' + (hw ? ' · mở ' + fm(S.start) + ' → đóng ' + fm(S.end) : '') : 'Nhiều người' + (+S.teams > 0 ? ' · ' + S.teams + ' đội' : ' · chơi đơn')} · ${+S.dur || 10} phút/lượt</span>
         <button class="alt" id="bL">🔗 Chép link</button>${b}<button class="alt" id="bC">⬇ CSV</button></div>
         <div class="wrapA"><div class="panel"><h3>🏆 Bảng xếp hạng (số lần hạ đối thủ, rồi vàng đang có)</h3><div id="rk"></div></div>
-        <div>${st === 'waiting' ? `<div class="panel"><h3>Mời học sinh vào</h3><div class="big2">${esc(CODE)}</div><p class="hint" style="text-align:center">Học sinh nhập mã ở trang chủ hoặc dùng link:<br><b style="word-break:break-all">${esc(link())}</b></p></div>` : ''}<div class="panel" id="tm"></div></div></div>`;
+        <div>${st === 'waiting' || st === 'pre' ? `<div class="panel"><h3>Mời học sinh vào</h3><div class="big2">${esc(CODE)}</div><p class="hint" style="text-align:center">Học sinh nhập mã ở trang chủ hoặc dùng link:<br><b style="word-break:break-all">${esc(link())}</b></p></div>` : ''}<div class="panel" id="tm"></div></div></div>`;
       $('#bL').onclick = async () => { try { await navigator.clipboard.writeText(link()); toast('Đã chép link'); } catch (_) { prompt('Chép link:', link()); } };
       $('#bC').onclick = csv; if ($('#bS')) $('#bS').onclick = startGame; if ($('#bE')) $('#bE').onclick = () => endGame(false);
     }
