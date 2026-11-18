@@ -91,7 +91,7 @@
   /* ==========================================================================
      DANH SÁCH GAME
      Mỗi game khai báo:
-       id, name, icon, tone, blurb   – hiển thị trên dashboard
+       id, name, icon, tone, blurb, tags[[biểu tượng, chú thích]] – hiển thị trên dashboard
        dir                           – thư mục chứa game (trang học sinh = dir + 'index.html')
        ns                            – "vùng" Firebase của game: '' (gốc) hoặc 'gold/'
                                        → phiên chơi nằm ở  <ns>sessions/<mã>, câu hỏi ở <ns>quiz/<mã>
@@ -105,6 +105,7 @@
   const GAMES = [
     {
       id: 'kho-bau', name: 'Truy Tìm Kho Báu', icon: '🗺️', tone: '#1D7A8C',
+      tags: [['🌐', 'Online: cả lớp cùng chơi'], ['🏠', 'Bài tập về nhà'], ['🧭', 'Đi qua các trạm trả lời câu hỏi'], ['💎', 'Tìm kho báu']],
       blurb: 'Đi qua các trạm trả lời câu hỏi để tìm kho báu. Chơi online cùng lớp hoặc làm bài tập về nhà.',
       dir: 'games/kho-bau/', ns: '',
       match: k => !!(k.q || k.seed),
@@ -138,6 +139,7 @@
     },
     {
       id: 'doi-vang', name: 'Đổi Vàng', icon: '💰', tone: '#C98A00',
+      tags: [['💰', 'Trả lời đúng để nhận vàng'], ['🎁', 'Mở rương, đổi quà'], ['🧑', 'Mỗi bạn một nhân vật']],
       blurb: 'Trả lời đúng để nhận vàng, mở rương và đổi quà. Mỗi bạn một nhân vật.',
       dir: 'games/doi-vang/', ns: 'gold/', fallback: true,
       match: k => !k.ts && !k.ini,
@@ -155,6 +157,7 @@
     },
     {
       id: 'bao-ve', name: 'Bảo vệ vương quốc', icon: '🏰', tone: '#7A3FA0',
+      tags: [['🛡️', 'Xây khiên giữ thành'], ['⚔️', 'Rèn kiếm'], ['🚩', 'Bắt thành viên đội khác'], ['👥', 'Thầy cô chia đội']],
       blurb: 'Các đội xây khiên, rèn kiếm để giữ thành và bắt thành viên đội khác. Thầy cô chia đội trong phòng điều khiển.',
       dir: 'games/bao-ve/', ns: 'gold/',
       match: k => !!(k.ts || k.ini),
@@ -172,6 +175,7 @@
     }
     ,{
       id: 'chay-dua', name: 'Chạy đua', icon: '🏁', tone: '#E8590C',
+      tags: [['🌐', 'Online: cả lớp chạy đua'], ['🔥', 'Cứ 3 câu đúng nhận năng lực'], ['⏪', 'Kéo lùi đối thủ'], ['🧊', 'Đóng băng đối thủ']],
       blurb: 'Cả lớp chạy đua online: trả lời đúng để tiến bước, đến mỗi 3 câu đúng (3, 6, 9, 12, …) nhận năng lực kéo lùi hoặc đóng băng đối thủ. Không tính thời gian.',
       dir: 'games/chay-dua/', ns: 'race/',
       match: k => !!k.game,
@@ -186,7 +190,8 @@
       }
     }
     ,{
-      id: 'tank-war', name: 'Tank War', icon: '🪖', tone: '#3F6B2B',
+      id: 'tank-war', name: 'Tank War', icon: '💥', tone: '#3F6B2B',
+      tags: [['🎯', 'Bắn trúng đối phương: +100 vàng'], ['❤️', 'Bị hạ: trả lời câu hỏi để hồi sinh'], ['🔧', 'Về xưởng ở 4 góc: nâng giáp và súng'], ['🤖', '1 người: đấu xe tăng máy (bài tập về nhà)'], ['👥', 'Nhiều người: chơi đơn hoặc chia đội']],
       blurb: 'Lái xe tăng nhìn từ trên xuống, bắn trúng đối phương được 100 vàng, bị hạ phải trả lời câu hỏi để hồi sinh. Về xưởng ở 4 góc để nâng giáp và súng. Chơi 1 người với xe máy (bài tập về nhà) hoặc nhiều người (chơi đơn / chia đội).',
       dir: 'games/tank-war/', ns: 'tank/',
       match: k => !!k.game,
@@ -587,6 +592,35 @@
   /* link có kèm game (g=...) thì biết ngay game nào, không cần tra mã trên mạng */
   const quick = (code, gid) => { const g = GAMES.find(x => x.id === gid); code = String(code || '').trim().toUpperCase(); return g && /^[A-Z0-9]{3,8}$/.test(code) ? { game: g, code, url: g.dir + 'index.html?code=' + code } : null; };
 
-  window.Hub = { GAMES, warm, login, restore, logout, listBanks, legacyCount, migrateLegacy, createSession, recent, forget, codeStatus, resolve, quick, studentLink,
+  /* ---------- Cập nhật theo file ("bản vá" lưu trên Firebase, patch.js nạp lúc mở trang) ---------- */
+  const pKey = p => encodeURIComponent(p).replace(/\./g, '%2E');
+  const pNorm = s => String(s).replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+  const pHash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+  const patches = {
+    /* file chữ trên hosting có thể cập nhật bằng bản vá (thêm file mới vào đây nếu có) */
+    KNOWN: ["index.html", "admin.html", "hub.js", "vk.js", "quota.js", "games/bao-ve/admin.html", "games/bao-ve/index.html", "games/chay-dua/admin.html", "games/chay-dua/index.html", "games/chay-dua/qbase.css", "games/chay-dua/race-q.js", "games/chay-dua/race.css", "games/chay-dua/race.js", "games/doi-vang/admin.html", "games/doi-vang/index.html", "games/kho-bau/admin.html", "games/kho-bau/index.html", "games/tank-war/admin.html", "games/tank-war/index.html", "fonts/vn-font.css"],
+    MAX: 1500000,
+    key: pKey, norm: pNorm, hash: pHash,
+    async list() { return (await fb('patchmeta', 'GET')) || {}; },
+    async put(path, text) {
+      const t = pNorm(text), k = pKey(path), now = Date.now();
+      if (t.length > patches.MAX) throw Error('File quá lớn (tối đa ~1,5 MB).');
+      await fb('patches/' + k, 'PUT', { p: path, c: t, t: now });          /* nội dung trước, danh mục sau */
+      await fb('patchmeta/' + k, 'PUT', { p: path, t: now, n: t.length, h: pHash(t) });
+    },
+    async del(path) {
+      const k = pKey(path);
+      await fb('patchmeta/' + k, 'DELETE');                                  /* danh mục trước, nội dung sau */
+      await fb('patches/' + k, 'DELETE');
+    },
+    async deployed(path) {                                                   /* bản đang deploy trên hosting (null nếu không có) */
+      try {
+        const r = await fetch(path + '?_=' + Date.now(), { cache: 'no-store' });
+        return r.ok ? pNorm(await r.text()) : null;
+      } catch (_) { return null; }
+    }
+  };
+
+  window.Hub = { patches, GAMES, warm, login, restore, logout, listBanks, legacyCount, migrateLegacy, createSession, recent, forget, codeStatus, resolve, quick, studentLink,
     readQFile, buildQs, imgPaths, indexImages, findImg, saveBank, renameBank, deleteBank, listSessions, deleteSession, cleanTs };
 })();

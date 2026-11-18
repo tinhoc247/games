@@ -308,6 +308,14 @@
           }
         }
       }
+    },
+    "patchmeta": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
+    },
+    "patches": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'"
     }
   }
 }

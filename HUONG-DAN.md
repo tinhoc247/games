@@ -5,6 +5,7 @@
 ```
 index.html        Trang cho HỌC SINH: nhập mã, vào đúng game
 admin.html        Dashboard cho THẦY CÔ: đăng nhập 1 lần, chọn dữ liệu, chọn game, tạo mã
+patch.js          Nạp bản vá "cập nhật theo file" (đặt đầu <head> mọi trang)
 hub.js            Lõi dùng chung + DANH SÁCH GAME (thêm game mới ở đây)
 games/
   kho-bau/        Truy Tìm Kho Báu  (index.html, admin.html)
@@ -83,6 +84,30 @@ Nếu game mới dùng vùng Firebase riêng, nhớ thêm Rules cho vùng đó n
 - Khi một lượt kết thúc (thầy cô bấm Kết thúc, hết giờ, hoặc có người về đích ở Chạy đua), mã **không dùng lại được nữa**: học sinh nhập mã sẽ bị từ chối.
 - **Báo cáo của lượt chơi được giữ lại cho đến khi admin xoá** (nút 🗑 trong 📊 Báo cáo trên dashboard). Không có gì tự xoá.
 - Học sinh đang ở màn hình kết quả không bị đẩy ra khi thầy cô xoá lượt.
+
+## Cập nhật theo file (không cần deploy lại cả thư mục)
+
+Khi chỉ sửa vài file (ví dụ `games/tank-war/index.html`, `hub.js`, `race.js`):
+
+1. Mở dashboard → nút **🔄 Cập nhật file**.
+2. **Chọn file…** (hoặc **Chọn cả thư mục…**, hoặc kéo thả). Hệ thống so với bản đang deploy: file khác thì đánh dấu sẵn, file giống thì bỏ qua. Với file trùng tên (`index.html`, `admin.html`) hệ thống tự đoán file đích theo nội dung, có ô chọn lại.
+3. Bấm **Cập nhật các file đã chọn**. Học sinh nhận bản mới ở lần mở hoặc tải lại trang kế tiếp.
+
+Cách hoạt động: file mới được lưu ở Firebase (`patchmeta/`, `patches/`). Mỗi trang nạp `patch.js` đầu tiên, hỏi `patchmeta` (rất nhẹ); nếu có bản vá cho trang hoặc cho `.js`/`.css` mà trang nạp thì dựng lại trang với nội dung mới. Không có bản vá thì chạy như cũ.
+
+**Làm 1 lần để bật tính năng**
+- Deploy bản có `patch.js` (đã nằm trong mọi trang) lên hosting.
+- Thêm Rules cho 2 nhánh `patchmeta` và `patches` (đã có sẵn trong `games/tank-war/firebase-rules-full.json`). Ai cũng đọc được, **chỉ tài khoản admin được ghi**:
+```json
+"patchmeta": { ".read": true, ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'" },
+"patches":   { ".read": true, ".write": "auth != null && auth.token.email === 'sparklv12026@gmail.com' && auth.token.firebase.sign_in_provider === 'password'" }
+```
+
+**Giới hạn và lưu ý**
+- Chỉ file chữ `.html` `.js` `.css`, tối đa ~1,5 MB mỗi file. Ảnh, font, `.xlsx` và chính `patch.js` vẫn phải deploy.
+- Khi sau này deploy đầy đủ, hãy **Gỡ** bản vá cũ (hoặc **Gỡ tất cả**) để bản vá không ghi đè bản deploy mới. Bản vá đã trùng bản deploy được cảnh báo ⚠ sẵn.
+- Bản vá lỗi làm trang hỏng: mở `admin.html?nopatch=1` (bỏ qua mọi bản vá) rồi **Gỡ**. Link `?nopatch=1` dùng được cho mọi trang.
+- Danh sách file được phép nằm ở `patches.KNOWN` trong `hub.js`; thêm game mới thì thêm file vào đó (hoặc gõ đường dẫn tay ở ô "Khác…"). Game mới cũng cần `<script src="../../patch.js"></script>` đặt **trước** `quota.js`.
 
 ## Giữ Firebase không quá tải (quota)
 

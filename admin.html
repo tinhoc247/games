@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head><script src="quota.js"></script>
+<head><script src="patch.js"></script><script src="quota.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dashboard Mini Games</title>
@@ -124,6 +124,31 @@ aside h2{margin-bottom:12px}
 #impErr{color:var(--rose);font-weight:600;margin:8px 0 0;min-height:1.3em;font-size:14.5px}
 #impMsg{color:var(--muted);margin:8px 0 0;min-height:1.3em;font-size:14px}
 
+
+/* ---------- 🔄 Cập nhật theo file ---------- */
+#upOv{position:fixed;inset:0;z-index:150;background:rgba(30,27,75,.55);backdrop-filter:blur(5px);display:flex;align-items:flex-start;justify-content:center;padding:clamp(10px,4vh,40px) 12px;overflow:auto;animation:fade .2s both}
+#upOv .pn{width:100%;max-width:860px;background:#fff;border-radius:26px;padding:22px 24px;box-shadow:0 24px 60px rgba(0,0,0,.35);animation:rise .35s cubic-bezier(.2,.9,.3,1.2) both}
+#upOv .hd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+#upOv h2{margin:0;font:800 23px/1.2 var(--f-code);flex:1;min-width:140px}
+#upOv h3{margin:22px 0 8px;font:800 17px/1.2 var(--f-code)}
+#upOv .upnote{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.5}
+#upOv .upbar{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 12px}
+#upOv .updrop{border:2.5px dashed var(--line);border-radius:18px;padding:14px;text-align:center;color:var(--muted);font-size:14px;transition:.15s}
+#upOv.drag .updrop{border-color:var(--violet);background:var(--violet-l);color:var(--violet-d)}
+#upOv .uprow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border:2px solid var(--line);border-radius:14px;margin-top:8px;background:#fff}
+#upOv .uprow .nm{font-weight:700;min-width:120px;word-break:break-all}
+#upOv .uprow select,#upOv .uprow input[type=text]{flex:1;min-width:170px;padding:8px 10px;border:2px solid var(--line);border-radius:10px;background:#FAF9FF;font:inherit;font-size:13px}
+#upOv .uprow input[type=checkbox]{width:20px;height:20px;accent-color:var(--violet)}
+#upOv .chip{display:inline-block;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;white-space:nowrap;background:var(--violet-l);color:var(--violet-d)}
+#upOv .chip.ok{background:#E2FAF3;color:var(--mint-d)}
+#upOv .chip.warn{background:#FFF3D1;color:#8A5B00}
+#upOv .chip.bad{background:#FFEDF1;color:var(--coral-d)}
+#upOv .upmsg{margin:10px 0 0;font-size:14px}
+#upOv .upmsg.err{color:var(--coral-d)}
+#upOv .upfoot{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+#upOv .upfoot .sp{flex:1}
+#upOv .uptip{margin-top:18px;padding:12px 14px;border-radius:14px;background:#FFF9E6;border:1.5px solid #F3DFA2;font-size:13px;line-height:1.55;color:#6B4E00}
+
 /* ---------- bước 2 ---------- */
 .games{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-top:14px}
 .game{position:relative;overflow:hidden;text-align:left;background:#fff;border:2.5px solid var(--line);border-radius:20px;padding:16px 16px 17px;cursor:pointer;
@@ -137,6 +162,12 @@ aside h2{margin-bottom:12px}
 .game:hover .ic{transform:scale(1.12) rotate(-8deg)}
 .game strong{display:block;font:800 17px/1.25 var(--f-code);margin:10px 0 3px}
 .game span.d{display:block;font-size:13.5px;color:var(--muted);line-height:1.45;position:relative;z-index:1}
+.game .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;position:relative;z-index:1}
+.game .tg,.game .info{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;font-size:16px;line-height:1;background:color-mix(in srgb,var(--tone) 12%,#fff);cursor:help}
+.game .info{font-size:17px;color:var(--tone);background:#fff;border:1.5px solid color-mix(in srgb,var(--tone) 40%,#fff);cursor:pointer;margin-left:auto}
+.game .info:hover,.game .info[aria-expanded=true]{background:var(--tone);color:#fff}
+.game span.d{margin-top:10px}
+.game span.d[hidden]{display:none}
 .game .tick{position:absolute;right:12px;top:18px;width:26px;height:26px;border-radius:50%;background:var(--tone);color:#fff;font-size:14px;line-height:26px;text-align:center;display:none;z-index:1}
 .game[aria-pressed=true] .tick{display:block;animation:pop .35s cubic-bezier(.2,.9,.3,1.6)}
 
@@ -233,6 +264,7 @@ table.rt .mini.go{background:var(--violet);border-color:var(--violet);color:#fff
   <header class="top">
     <h1><span class="logo" aria-hidden="true">🎮</span>Dashboard Mini Games</h1>
     <button type="button" id="repBtn" aria-haspopup="dialog">📊 Báo cáo</button>
+    <button type="button" id="upBtn" aria-haspopup="dialog" title="Cập nhật file mới lên hệ thống mà không cần deploy lại">🔄 Cập nhật file</button>
     <a href="index.html" target="_blank" rel="noopener">👀 Trang học sinh</a>
     <button type="button" id="tsBtn" title="Xoá dữ liệu giờ máy chủ của học sinh cũ (Đổi Vàng / Bảo vệ)">🧹 Dọn ts</button>
     <button type="button" id="out">↩ Đăng xuất</button>
@@ -502,9 +534,14 @@ table.rt .mini.go{background:var(--violet);border-color:var(--violet);color:#fff
   /* ---------- bước 2 ---------- */
   function renderGames(){
     $('#games').innerHTML=Hub.GAMES.map(g=>`<button type="button" class="game" data-id="${g.id}" style="--tone:${g.tone}" aria-pressed="false">
-      <span class="tick" aria-hidden="true">✓</span><span class="ic" aria-hidden="true">${g.icon}</span><strong>${esc(g.name)}</strong><span class="d">${esc(g.blurb)}</span></button>`).join('');
+      <span class="tick" aria-hidden="true">✓</span><span class="ic" aria-hidden="true">${g.icon}</span><strong>${esc(g.name)}</strong><span class="tags">${(g.tags||[]).map(t=>`<span class="tg" title="${esc(t[1])}" aria-label="${esc(t[1])}">${t[0]}</span>`).join('')}<span class="info" role="button" tabindex="0" title="Xem mô tả đầy đủ" aria-label="Xem mô tả đầy đủ" aria-expanded="false">ⓘ</span></span><span class="d" hidden>${esc(g.blurb)}</span></button>`).join('');
   }
+  $('#games').addEventListener('keydown',e=>{
+    if((e.key==='Enter'||e.key===' ')&&e.target.classList.contains('info')){e.preventDefault();e.stopPropagation();e.target.click()}
+  });
   $('#games').addEventListener('click',e=>{
+    const inf=e.target.closest('.info');
+    if(inf){e.stopPropagation();const d=inf.closest('.game').querySelector('.d');d.hidden=!d.hidden;inf.setAttribute('aria-expanded',!d.hidden);return}
     const b=e.target.closest('.game');if(!b)return;
     GAME=Hub.GAMES.find(g=>g.id===b.dataset.id);
     document.querySelectorAll('.game').forEach(x=>x.setAttribute('aria-pressed',x===b));
@@ -596,6 +633,134 @@ table.rt .mini.go{background:var(--violet);border-color:var(--violet);color:#fff
     if(c){const r=Hub.recent().find(x=>x.code===c.dataset.copy);copy(Hub.studentLink(c.dataset.copy,r&&r.game),'Đã chép link kèm mã')}
     if(d){Hub.forget(d.dataset.del);renderRecent()}
   });
+
+
+  /* ---------- 🔄 Cập nhật theo file (bản vá lưu trên Firebase, không cần deploy lại) ---------- */
+  const PT=Hub.patches;
+  let UPR=[],UPM={};
+  const UPOK=/\.(html?|js|css)$/i;
+  function closeUp(){const o=$('#upOv');if(o)o.remove();document.removeEventListener('keydown',upKey);$('#upBtn').focus()}
+  function upKey(e){if(e.key==='Escape')closeUp()}
+  const upMsg=(t,err)=>{const m=$('#upMsg');if(m){m.className='upmsg'+(err?' err':'');m.textContent=t||''}};
+  const upFmt=ms=>{const d=new Date(ms),p=n=>String(n).padStart(2,'0');return p(d.getHours())+':'+p(d.getMinutes())+' '+p(d.getDate())+'/'+p(d.getMonth()+1)};
+  const upSim=(x,y)=>{if(x==null||y==null)return 0;const A=new Set(x.split('\n').map(s=>s.trim()).filter(Boolean)),B=new Set(y.split('\n').map(s=>s.trim()).filter(Boolean));let i=0;A.forEach(s=>{if(B.has(s))i++});return i/(A.size+B.size-i||1)};
+  async function openUp(){
+    if($('#upOv'))return;
+    const o=document.createElement('div');o.id='upOv';o.setAttribute('role','dialog');o.setAttribute('aria-modal','true');o.setAttribute('aria-label','Cập nhật file');
+    o.innerHTML=`<div class="pn"><div class="hd"><h2>🔄 Cập nhật theo file</h2><button class="btn alt" type="button" id="upX">← Quay lại</button></div>
+      <p class="upnote">Khi có file mới (.html, .js, .css), chọn file đó ở đây là hệ thống dùng bản mới ngay, không cần deploy lại cả thư mục. Học sinh nhận bản mới ở lần mở/tải lại trang kế tiếp.</p>
+      <div class="upbar"><button class="btn" type="button" id="upPick">📄 Chọn file…</button><button class="btn alt" type="button" id="upDir">📁 Chọn cả thư mục…</button></div>
+      <input type="file" id="upF" multiple accept=".html,.htm,.js,.css" hidden><input type="file" id="upD" webkitdirectory hidden>
+      <div class="updrop">hoặc kéo thả file vào đây</div>
+      <div id="upList"></div>
+      <div class="upfoot"><button class="btn" type="button" id="upGo" disabled>⬆ Cập nhật các file đã chọn</button><button class="btn alt" type="button" id="upClr" hidden>Bỏ danh sách</button><span class="sp"></span></div>
+      <div id="upMsg" class="upmsg" role="status"></div>
+      <h3>Bản vá đang áp dụng</h3><div id="upCur"><div class="upnote">Đang tải…</div></div>
+      <div class="uptip">💡 Sau khi deploy đầy đủ bản mới lên hosting, hãy <b>Gỡ</b> các bản vá cũ (hoặc <b>Gỡ tất cả</b>) để khỏi ghi đè lên bản deploy. Nếu một bản vá làm trang lỗi, mở <code>admin.html?nopatch=1</code> (bỏ qua mọi bản vá) rồi gỡ nó ở đây.</div></div>`;
+    document.body.appendChild(o);
+    o.addEventListener('click',e=>{if(e.target===o)closeUp()});
+    $('#upX').onclick=closeUp;document.addEventListener('keydown',upKey);
+    $('#upPick').onclick=()=>$('#upF').click();$('#upDir').onclick=()=>$('#upD').click();
+    $('#upF').onchange=e=>{upAdd([...e.target.files]);e.target.value=''};
+    $('#upD').onchange=e=>{upAdd([...e.target.files]);e.target.value=''};
+    ['dragenter','dragover'].forEach(n=>o.addEventListener(n,e=>{e.preventDefault();o.classList.add('drag')}));
+    ['dragleave','drop'].forEach(n=>o.addEventListener(n,e=>{if(n==='drop'||e.target===o){o.classList.remove('drag')}}));
+    o.addEventListener('drop',e=>{e.preventDefault();upAdd([...(e.dataTransfer.files||[])])});
+    $('#upClr').onclick=()=>{UPR=[];upDraw()};
+    $('#upGo').onclick=upApply;
+    $('#upList').addEventListener('change',upRowChange);
+    $('#upCur').addEventListener('click',upCurClick);
+    UPR=[];upDraw();await upLoadCur();
+  }
+  async function upLoadCur(){
+    try{UPM=await PT.list()}catch(e){UPM={};$('#upCur').innerHTML='<div class="warn">⚠️ '+esc(e.message)+' — kiểm tra đã thêm Rules cho nhánh <b>patchmeta</b> và <b>patches</b> (xem HUONG-DAN.md).</div>';return}
+    upDrawCur();
+  }
+  async function upDrawCur(){
+    const ks=Object.keys(UPM).sort((x,y)=>(UPM[x].p>UPM[y].p?1:-1));
+    if(!ks.length){$('#upCur').innerHTML='<div class="upnote">Chưa có bản vá nào. Mọi trang đang chạy đúng bản đã deploy.</div>';return}
+    $('#upCur').innerHTML='<div class="upnote">Đang kiểm tra…</div>';
+    const rows=await Promise.all(ks.map(async k=>{
+      const m=UPM[k],dep=await PT.deployed(m.p),same=dep!=null&&PT.hash(dep)===m.h;
+      return `<div class="uprow"><span class="nm">${esc(m.p)}</span><span class="chip">${upFmt(m.t)} · ${Math.max(1,Math.round(m.n/1024))} KB</span>${same?'<span class="chip warn" title="Bản deploy hiện tại đã giống bản vá, gỡ cũng không đổi gì">⚠ trùng bản deploy, nên gỡ</span>':''}<span style="flex:1"></span><button class="mini del" type="button" data-rm="${esc(m.p)}">Gỡ</button></div>`}));
+    if(!$('#upCur'))return;
+    $('#upCur').innerHTML=rows.join('')+`<div class="upfoot"><span class="sp"></span><button class="mini del" type="button" data-rmall>🧹 Gỡ tất cả</button></div>`;
+  }
+  async function upCurClick(e){
+    const one=e.target.closest('[data-rm]'),all=e.target.closest('[data-rmall]');if(!one&&!all)return;
+    const L=one?[one.dataset.rm]:Object.values(UPM).map(m=>m.p);
+    if(!confirm(one?'Gỡ bản vá "'+L[0]+'"? Trang sẽ quay về bản đã deploy.':'Gỡ tất cả '+L.length+' bản vá? Mọi trang quay về bản đã deploy.'))return;
+    try{for(const p of L)await PT.del(p);upMsg('✅ Đã gỡ '+L.length+' bản vá.')}catch(er){upMsg('⚠️ '+er.message,1)}
+    await upLoadCur();await upRecheck();
+  }
+  async function upAdd(files){
+    upMsg('');const bad=[];
+    for(const f of files){
+      if(!UPOK.test(f.name)){bad.push(f.name+' (chỉ nhận .html .js .css; ảnh, font, .xlsx cần deploy)');continue}
+      if(f.name==='patch.js'){bad.push('patch.js (phải deploy, không cập nhật bằng cách này)');continue}
+      if(f.size>PT.MAX){bad.push(f.name+' (quá lớn)');continue}
+      const text=PT.norm(await f.text());
+      let rel=f.webkitRelativePath?f.webkitRelativePath.split('/').slice(1).join('/'):'';
+      let cands=PT.KNOWN.filter(p=>p.split('/').pop()===f.name),path='';
+      if(rel){const ex=PT.KNOWN.find(p=>p===rel)||PT.KNOWN.find(p=>rel.endsWith('/'+p));if(ex)path=ex;else if(!cands.length)path=rel}
+      if(!path&&cands.length===1)path=cands[0];
+      if(!path&&cands.length>1){   /* trùng tên (index.html, admin.html): đoán theo độ giống nội dung bản đang deploy */
+        let best=-1;for(const c of cands){const s=upSim(text,await PT.deployed(c));if(s>best){best=s;path=c}}
+      }
+      UPR=UPR.filter(r=>r.name!==f.name||r.path!==path);
+      UPR.push({name:f.name,text,cands,path,sel:true});
+    }
+    if(bad.length)upMsg('Bỏ qua: '+bad.join('; '),1);
+    await upRecheck();
+  }
+  async function upRecheck(){
+    try{UPM=await PT.list()}catch(_){}
+    for(const r of UPR){
+      const p=(r.path||'').trim();r.st='need';
+      if(!p){r.st='nopath';r.sel=false;continue}
+      const dep=await PT.deployed(p),h=PT.hash(r.text),cur=UPM[PT.key(p)];
+      if(dep!=null&&PT.hash(dep)===h)r.st=cur?'revert':'same';
+      else if(cur&&cur.h===h)r.st='applied';
+      else r.st=dep==null?'new':'update';
+      if(r.st==='same'||r.st==='applied')r.sel=false;
+    }
+    upDraw();
+  }
+  const UPST={update:['','Khác bản đã deploy → sẽ cập nhật'],new:['ok','File mới (chưa có trên hosting)'],same:['','Giống bản đã deploy, không cần cập nhật'],applied:['ok','Đã áp dụng rồi'],revert:['warn','Giống bản deploy → sẽ gỡ bản vá cũ'],nopath:['bad','Chưa biết file này thay cho file nào'],need:['','…']};
+  function upDraw(){
+    const L=$('#upList');if(!L)return;
+    L.innerHTML=UPR.map((r,i)=>{
+      const known=r.cands.includes(r.path),st=UPST[r.st||'need'];
+      const target=r.cands.length>1||!known&&r.cands.length?`<select data-i="${i}" data-t="sel" aria-label="Thay cho file nào">${r.cands.map(c=>`<option value="${esc(c)}"${c===r.path?' selected':''}>${esc(c)}</option>`).join('')}<option value=""${!known&&r.path===''?' selected':''}>Khác…</option></select>`
+        :`<input type="text" data-i="${i}" data-t="txt" value="${esc(r.path)}" placeholder="đường dẫn, ví dụ games/tank-war/index.html" aria-label="Đường dẫn file">`;
+      const same=r.cands.length===1&&known;
+      return `<div class="uprow"><input type="checkbox" data-i="${i}" data-t="ck"${r.sel?' checked':''} aria-label="Chọn ${esc(r.name)}"><span class="nm">${esc(r.name)}</span>${same?`<span class="chip">→ ${esc(r.path)}</span>`:target}<span class="chip ${st[0]}">${esc(st[1])}</span><button class="mini" type="button" data-i="${i}" data-t="rm" aria-label="Bỏ ${esc(r.name)}">✕</button></div>`}).join('');
+    L.querySelectorAll('[data-t=rm]').forEach(b=>b.onclick=()=>{UPR.splice(+b.dataset.i,1);upDraw()});
+    $('#upClr').hidden=!UPR.length;
+    const n=UPR.filter(r=>r.sel&&r.path&&['update','new','revert'].includes(r.st)).length;
+    $('#upGo').disabled=!n;$('#upGo').textContent=n?'⬆ Cập nhật '+n+' file đã chọn':'⬆ Cập nhật các file đã chọn';
+  }
+  async function upRowChange(e){
+    const t=e.target,i=+t.dataset.i,r=UPR[i];if(!r)return;
+    if(t.dataset.t==='ck'){r.sel=t.checked;upDraw();return}
+    if(t.dataset.t==='sel'){r.path=t.value;if(!t.value){r.cands=[];r.path=''}}
+    if(t.dataset.t==='txt')r.path=t.value.trim().replace(/^\/+/,'');
+    r.sel=true;await upRecheck();
+  }
+  async function upApply(){
+    const todo=UPR.filter(r=>r.sel&&r.path&&['update','new','revert'].includes(r.st));if(!todo.length)return;
+    const btn=$('#upGo');btn.disabled=true;let ok=0,fail=[];
+    for(const r of todo){
+      btn.textContent='Đang gửi '+(ok+fail.length+1)+'/'+todo.length+'…';
+      try{if(r.st==='revert')await PT.del(r.path);else await PT.put(r.path,r.text);ok++}
+      catch(er){fail.push(r.path+': '+er.message)}
+    }
+    UPR=UPR.filter(r=>!todo.includes(r)||fail.some(f=>f.startsWith(r.path+':')));
+    if(fail.length)upMsg('⚠️ '+ok+' file xong, lỗi: '+fail.join('; ')+(/quyền|Rules/i.test(fail[0])?' (cần thêm Rules cho patchmeta và patches, xem HUONG-DAN.md)':''),1);
+    else upMsg('✅ Đã cập nhật '+ok+' file. Học sinh sẽ nhận bản mới khi mở hoặc tải lại trang.');
+    await upLoadCur();await upRecheck();
+  }
+  $('#upBtn').onclick=openUp;
 
   /* ---------- 📊 Báo cáo: tất cả lượt chơi của mọi game ---------- */
   const RST={waiting:'⏳ Đang chờ',running:'🟢 Đang chơi',ended:'🔒 Đã kết thúc'};
