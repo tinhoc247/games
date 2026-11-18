@@ -101,8 +101,6 @@ function raceCountdown(startAt, off, ov, n, done) {
 const AVD=(()=>{
 /* Phong cách "khối 3D": ô bo góc, mặt chiếm cả ô, viền đáy tối, mắt to có điểm sáng */
 const K='#2b2433';
-const hx=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
-const sh=(h,a)=>{const t=a<0?0:255,k=Math.abs(a);return'#'+hx(h).map(v=>Math.round(v+(t-v)*k).toString(16).padStart(2,'0')).join('')};
 const c=(x,y,r,f,o='')=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}" ${o}/>`;
 const e=(x,y,rx,ry,f,t,o='')=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${f}"${t?` transform="${t}"`:''} ${o}/>`;
 const d=(pa,f,o='')=>`<path d="${pa}" fill="${f}" ${o}/>`;
@@ -112,7 +110,6 @@ const mir=s=>`<g transform="translate(64 0) scale(-1 1)">${s}</g>`,both=s=>s+mir
 /* mắt: tròng trắng to, đồng tử, 2 điểm sáng */
 const eye=(x,y,r,pc,sc)=>c(x,y,r,sc||'#fff','stroke="#0002" stroke-width=".7"')+c(x+(x<32?.7:-.7),y+.7,r*.62,pc||K)+c(x+r*.2,y-r*.22,r*.25,'#fff')+c(x-r*.2,y+r*.32,r*.1,'#fff','opacity=".85"');
 const eyes=(y=28,dx=11.5,r=6.4,pc,sc)=>eye(32-dx,y,r,pc,sc)+eye(32+dx,y,r,pc,sc);
-const bead=(y=29,dx=11,r=3.6)=>both(c(32-dx,y,r,K)+c(32-dx+1,y-1.1,r*.34,'#fff'));
 const muz=(f,y=40,rx=12.5,ry=8.5)=>e(32,y,rx,ry,f);
 const nose=(f=K,y=36.5,w=4.2)=>d(`M${32-w} ${y}q${w} -2.6 ${w*2} 0q-.4 4.4 -${w} 4.4q-${w-.4} 0 -${w} -4.4z`,f)+e(30.6,y+.6,1.2,.7,'#fff','', 'opacity=".55"');
 const mouth=(y=41.5,w=4.6)=>l(`M32 ${y-3}v2.6M${32-w} ${y}q${w/2} 3 ${w} 0q${w/2} 3 ${w} 0`,K,1.7);

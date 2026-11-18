@@ -16,7 +16,7 @@ Cuộc đua online nhiều người, dùng chung thư viện câu hỏi của hu
   - ⏪ kéo lùi 1 bước một đối thủ do mình chọn;
   - 🧊 đóng băng một đối thủ 3 giây (không trả lời được).
   Người bị ảnh hưởng nhận thông báo có tên người ra chiêu. Không còn đối thủ nào đang chạy thì năng lực biến thành "tiến thêm 1 bước".
-- Người chơi có **thanh tiến độ phía trên** thấy mọi người chạy; admin thấy từng làn đua, bảng xếp hạng và nhật ký hiệu ứng.
+- Người chơi có **thanh tiến độ phía trên** thấy mọi người chạy; admin thấy mọi người chạy chung trên một đường đua nhiều làn (bấm vào nhân vật để mời ra khỏi phòng), bảng xếp hạng và nhật ký hiệu ứng.
 - Bảng tóm tắt cuối cuộc đua: xếp hạng (người về đích đầu tiên hạng 1, những người còn lại xếp theo số bước), độ chính xác (câu đúng ngay lần đầu / số câu đã làm), câu hỏi cần lưu ý (nhiều bạn sai).
 
 ## BƯỚC BẮT BUỘC: thêm Rules cho Firebase (làm 1 lần)

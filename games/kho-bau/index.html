@@ -28,7 +28,7 @@ button:active{transform:translateY(2px);box-shadow:0 1px 0 #c2410c}button.alt{ba
 .pawn{transition:transform .9s cubic-bezier(.5,0,.3,1)}.ice{animation:ice 1.3s ease-in-out infinite alternate}@keyframes ice{from{opacity:1}to{opacity:.6}}
 .team{display:flex;gap:6px;align-items:center;padding:5px 8px;border-radius:10px;border:2px solid transparent;background:var(--card);font-size:13px}
 .team.on{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.3)}.team small{color:var(--mut);display:block;font-size:11px;line-height:1.2}.team .em{font-size:22px}
-#teamList{max-height:44vh;overflow:auto}.rts{display:flex;flex-wrap:wrap;gap:6px}.rts button{width:42px;padding:8px 0;font-size:18px}
+#teamList{max-height:44vh;overflow:auto}
 #log{max-height:90px;overflow:auto;font-size:12px;color:var(--mut);margin-top:6px}
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:12px;z-index:9}
 #modal .box{background:var(--card);border-radius:18px;max-width:560px;width:100%;max-height:94%;overflow:auto;padding:14px;text-align:center}
@@ -84,27 +84,8 @@ html,body{overflow-y:auto}
 #infpop{position:fixed;z-index:200;background:#0f172a;color:#f1f5f9;border:1px solid #334155;border-radius:14px;padding:14px 16px;font-size:16px;line-height:1.6;box-shadow:0 12px 32px rgba(0,0,0,.45);white-space:pre-line;text-align:left}
 .sh{display:flex;align-items:center;gap:12px;margin-bottom:18px}.sh h2{margin:0;font-size:clamp(20px,2.2vw,26px);flex:1}
 .num{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#f97316,#fb923c);color:#fff;display:grid;place-items:center;font-weight:800;font-size:19px;box-shadow:0 3px 0 #c2410c}
-.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px}
-.qc{display:inline-block;margin:0 0 14px;padding:6px 14px;border-radius:999px;background:rgba(14,165,233,.16);font-weight:700;font-size:15px}.qc:empty{display:none}
-.cta{grid-column:1/-1;font-size:clamp(20px,2.4vw,26px)!important;padding:20px 24px!important;border-radius:20px!important;background:linear-gradient(135deg,#0ea5e9,#2563eb)!important;box-shadow:0 6px 0 #1e40af!important}
-.adm #setup{padding:clamp(14px,3vw,44px)}
-.adm .setup{max-width:1180px;gap:clamp(14px,2vw,26px);grid-template-columns:1fr 1fr}
 @media(max-width:860px){.adm .setup{grid-template-columns:1fr}}
-.adm h1{text-align:center;font-size:clamp(30px,4vw,48px);margin:6px 0 10px}
-.adm .card{border-radius:22px;padding:clamp(18px,2.4vw,30px);box-shadow:0 14px 40px rgba(0,0,0,.28)}
-.adm label{font-size:15px;display:flex;flex-direction:column;gap:7px;color:var(--mut)}
-.adm select,.adm input:not([type=checkbox]):not([type=file]){font-size:18px;padding:12px 14px;border:2px solid var(--line);border-radius:14px;width:100%}
-.adm select:focus,.adm input:focus{outline:none;border-color:#0ea5e9;box-shadow:0 0 0 4px rgba(14,165,233,.25)}
-.adm .fl{margin:0 0 14px}
-.adm input[type=file]{width:100%;padding:10px;border:2px dashed #0ea5e9;border-radius:14px;background:rgba(14,165,233,.08);font-size:16px;color:var(--ink)}
-.adm input[type=file]::file-selector-button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:9px 16px;margin-right:12px;cursor:pointer;background:#0ea5e9;color:#fff}
-.adm label.chk{flex-direction:row;align-items:center;gap:10px;font-size:16px;color:var(--ink)}
-.adm .chk input{width:22px;height:22px;padding:0}
-.adm #modal .box{border-radius:26px;padding:clamp(20px,3vw,36px)}
-.frow{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:12px 0;text-align:left}
 .err{color:var(--badc);font-weight:700;min-height:1.3em;margin:8px 0}
-.btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:12px}
-.adm .btns button{font-size:18px;padding:12px 24px}
 </style>
 <style id="entry-css">
 @keyframes eflt{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-18px) rotate(6deg)}}
@@ -389,7 +370,6 @@ function layout(){const R=T.length==1?13:T.length<=4?11:T.length<=8?9.5:8.5,pos=
   const m=sh.length,rr=(c>6?2.05:[0,0,1.05,1.2,1.45,1.7,2.05][m])*R,a0=m==2?0:-Math.PI/2;
   sh.forEach((i,j)=>{const g=a0+2*Math.PI*j/m;pos[i]=[n.x+Math.cos(g)*rr,n.y+Math.sin(g)*rr]})});
  return{R,pos,bad}}
-function posOf(t,i){return layout().pos[i]||[0,0]}
 function render(){const g=$('#pawns'),hl=phase=='route'?ri:cur,L=layout(),R=L.R,k=R/11,few=T.length<=4;
  let ld=-1;if(T.length>2)T.forEach((t,i)=>{if(t.pos>0&&(ld<0||t.pos>T[ld].pos||(t.pos==T[ld].pos&&t.gold>T[ld].gold)))ld=i});
  T.forEach((t,i)=>{let e=document.getElementById('pw'+i);if(!e){g.insertAdjacentHTML('beforeend',`<g class="pawn" id="pw${i}"><title>${esc(t.name)}</title>${T.length==1?`<circle class="pulse" r="${R+6}" fill="none" stroke="#f97316" stroke-width="4"/>`:''}<g transform="scale(${k})"><path class="bt" d="M-17 5H17L11 15H-11Z" fill="#b45309" stroke="#fff" stroke-width="2" stroke-linejoin="round" style="display:none"/><circle r="11" fill="${COL[i]}" stroke="#fff" stroke-width="3"/><text y="5.5" font-size="14" text-anchor="middle">${EMO[i]}</text><g class="ice" style="display:none"><rect x="-15" y="-16" width="30" height="32" rx="8" fill="#bae6fd" fill-opacity=".72" stroke="#ecfeff" stroke-width="2"/><path d="M-9-9l5-3M6 7l5-3" stroke="#fff" stroke-width="2" stroke-linecap="round"/><text x="10" y="-9" font-size="11" text-anchor="middle">❄️</text></g></g>${few&&T.length>1?`<text y="-17" font-size="11" font-weight="700" text-anchor="middle" fill="#fff" stroke="#111" stroke-width="3" paint-order="stroke">${t.name}</text>`:''}${T.length==1?(()=>{const lb='⭐ Bạn · '+String(t.name).slice(0,14),w=lb.length*7.2+16;return`<g transform="translate(0 ${-R-16})"><rect x="${-w/2}" y="-10" width="${w}" height="19" rx="9.5" fill="#f97316" stroke="#fff" stroke-width="2"/><text y="3.5" font-size="12" font-weight="800" fill="#fff" text-anchor="middle">${esc(lb)}</text></g>`})():''}<text class="cr" y="${few?-30:-R-3}" font-size="14" text-anchor="middle" style="display:none">👑</text></g>`);e=document.getElementById('pw'+i)}
@@ -434,11 +414,6 @@ function useItem(k){const t=T[cur];if(!t.inv[k]||!RCB)return;t.inv[k]--;IU=ITM[k
 const W=t=>T.length>1?t.name:'Bạn';
 function log(m){const l=$('#log');l.innerHTML=`<div>• ${m}</div>`+l.innerHTML}
 function modal(h){$('#mbox').innerHTML=h;$('#modal').style.display='flex'}
-function endAsk(){modal(`<div class="big">🏁</div><h3>Kết thúc game?</h3><p>Trò chơi sẽ dừng lại và hiển thị kết quả hiện tại.</p><button onclick="endGame()">🏁 Kết thúc</button> <button class="alt" onclick="close_()">↩ Chơi tiếp</button>`)}
-function endGame(){window.FIN&&FIN();try{typeof AC!='undefined'&&AC&&AC.state=='running'&&AC.suspend()}catch(e){}
-const md=['🥇','🥈','🥉'],R=T.map((t,i)=>({t,i})).sort((a,b)=>b.t.pos-a.t.pos||b.t.gold-a.t.gold),
-rk=SOLO?'':`<div style="text-align:left;margin:10px 0">${R.map((r,k)=>`<div class="rw"><span>${md[k]||(k+1)+'.'} ${EMO[r.i]} <b>${esc(r.t.name)}</b> <small>${stn(r.t)}</small></span><b>💰 ${r.t.gold}</b></div>`).join('')}</div>`;
-modal(`<div class="big">🏁</div><h2>Game đã kết thúc</h2>${SOLO?`<p style="font-size:20px;font-weight:700">${EMO[0]} ${esc(T[0].name)} · ${stn(T[0])}</p><p>💰 ${T[0].gold} vàng</p>`:rk}<p>Đúng ${ST.ok}/${ST.ok+ST.bad} câu</p>${sumH()}<button onclick="location.reload()">Chơi lại</button>`)}
 function close_(){$('#modal').style.display='none'}
 function info(h,f){NX=f;modal(h+`<button onclick="NX()">Tiếp tục</button>`)}
 function nextTurn(){close_();cur=(cur+1)%T.length;render()}
@@ -630,7 +605,6 @@ const mir=s=>`<g transform="translate(64 0) scale(-1 1)">${s}</g>`,both=s=>s+mir
 /* mắt: tròng trắng to, đồng tử, 2 điểm sáng */
 const eye=(x,y,r,pc,sc)=>c(x,y,r,sc||'#fff','stroke="#0002" stroke-width=".7"')+c(x+(x<32?.7:-.7),y+.7,r*.62,pc||K)+c(x+r*.2,y-r*.22,r*.25,'#fff')+c(x-r*.2,y+r*.32,r*.1,'#fff','opacity=".85"');
 const eyes=(y=28,dx=11.5,r=6.4,pc,sc)=>eye(32-dx,y,r,pc,sc)+eye(32+dx,y,r,pc,sc);
-const bead=(y=29,dx=11,r=3.6)=>both(c(32-dx,y,r,K)+c(32-dx+1,y-1.1,r*.34,'#fff'));
 const muz=(f,y=40,rx=12.5,ry=8.5)=>e(32,y,rx,ry,f);
 const nose=(f=K,y=36.5,w=4.2)=>d(`M${32-w} ${y}q${w} -2.6 ${w*2} 0q-.4 4.4 -${w} 4.4q-${w-.4} 0 -${w} -4.4z`,f)+e(30.6,y+.6,1.2,.7,'#fff','', 'opacity=".55"');
 const mouth=(y=41.5,w=4.6)=>l(`M32 ${y-3}v2.6M${32-w} ${y}q${w/2} 3 ${w} 0q${w/2} 3 ${w} 0`,K,1.7);
@@ -800,8 +774,6 @@ async function startSes(code){const s=await store.get('sessions/'+code);const t=
 /* ===== LOẠI NGƯỜI CHƠI (không kèm lý do) ===== */
 function NKK(x){return String(x||'').trim().replace(/\s+/g,' ').toLowerCase()}
 function isKick(s,id,nm){const k=s&&s.kicked&&s.kicked[id];return !!k&&(typeof k!='object'||k.n==NKK(nm))}
-async function kickAsk(code,id){const p=(window.CR||{})[id]||{};if(!confirm('Loại "'+(p.name||'')+'" khỏi phòng?'))return;
- try{await fb('sessions/'+code+'/kicked/'+id,'PUT',{t:Date.now(),n:NKK(p.name)});await Promise.all([store.del('results/'+code+'/'+id),fb('live/'+code+'/'+id,'DELETE').catch(()=>{})]);ctl(code)}catch(e){alert('⚠️ '+e.message)}}
 function gotKicked(){if(window.KICKED)return;window.KICKED=true;clearInterval(window.KT);clearInterval(window.WT);clearInterval(window.ENDT);clearInterval(window.LVT);try{typeof AC!='undefined'&&AC&&AC.state=='running'&&AC.suspend()}catch(e){}
  modal('<div class="big">🚫</div><h3>Em đã bị mời ra khỏi phòng</h3><button onclick="location.reload()">Thoát</button>')}
 function kickWatch(code){clearInterval(window.KT);window.KT=setInterval(async()=>{if(window.KICKED)return;if(SES&&Date.now()>SES.end+5000){clearInterval(window.KT);return}
@@ -887,33 +859,47 @@ if(typeof drawGhosts=='function'){var d0=drawGhosts;drawGhosts=function(){d0();p
 window.addEventListener('resize',function(){var b=document.getElementById('pv');if(b)b.dataset.h=''; pvUpdate()});
 })();
 </script><script id="vk-js">
-(function(){var T=null,OKA='',sh=true,sy=false,K=null,ADJ=null,CH=null,R=['1234567890','QWERTYUIOP','ASDFGHJKL','ZXCVBNM'],NM={jN:1,pname:1,nm:1,hwn:1},FULL={aP:1};
+(function(){var T=null,OKA='',sh=true,pg='abc',K=null,ADJ=null,CH=null,R=['1234567890','QWERTYUIOP','ASDFGHJKL','ZXCVBNM'],NM={jN:1,pname:1,nm:1,hwn:1,names:1},CODE={jC:1,code:1,cd:1},TN=['\u0300','\u0301','\u0309','\u0303','\u0323'],TL=['\u00e0','\u00e1','\u1ea3','\u00e3','\u1ea1'];
+(function(){if(document.getElementById('vk-full-css'))return;var s=document.createElement('style');s.id='vk-full-css';s.textContent="#vk{position:fixed;left:0;right:0;bottom:0;z-index:99999;display:none;background:#0f172a;user-select:none;-webkit-user-select:none;touch-action:manipulation}#vk.full{left:50%;right:auto;width:100%;max-width:640px;transform:translateX(-50%);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));border-radius:14px 14px 0 0;box-shadow:0 -6px 20px #0008}#vk.full .vr{display:flex;justify-content:center;gap:4px;margin:4px auto}#vk.full button{all:unset;box-sizing:border-box;flex:1;min-width:0;height:clamp(38px,5.8vh,48px);display:flex;align-items:center;justify-content:center;text-align:center;font:800 clamp(16px,2.6vw,22px)/1 \"Trebuchet MS\",\"Segoe UI\",Arial,sans-serif;border-radius:8px;background:#f1f5f9;color:#0f172a;box-shadow:0 2px 0 #94a3b8;cursor:pointer;-webkit-tap-highlight-color:transparent}#vk.full button:active{transform:translateY(2px);box-shadow:none;background:#fde68a}#vk.full .num{background:#bae6fd}#vk.full .fn{background:#fed7aa;flex:1.4}#vk.full .tn{background:#ddd6fe}#vk.full .on{background:#fde047}#vk.full .ok{background:#22c55e;color:#fff;box-shadow:0 2px 0 #15803d;flex:2.4}#vk.full .cl{background:#fca5a5;flex:1}#vk.full .sp{flex:3}#vk.full .hf{flex:0 0 calc(10% - 4px)}#vk.full .vh{color:#cbd5e1;font:600 13px/1.2 \"Segoe UI\",Arial,sans-serif;text-align:center;margin:2px 0}";document.head.appendChild(s)})();
 function A(c){return String(c).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function el(){return T?document.getElementById(T):null}
 function isNm(){return !!NM[T]}
-function isFull(){return !!FULL[T]}
+function isCode(){return !!CODE[T]}
 function build(){K=document.createElement('div');K.id='vk';K.addEventListener('mousedown',function(e){e.preventDefault()});
  K.addEventListener('click',function(e){var b=e.target.closest('button');if(b)key(b.getAttribute('data-k'))});document.body.appendChild(K)}
-function kb(c,cls){return '<button'+(cls?' class="'+cls+'"':'')+' data-k="'+A(c)+'">'+A(c)+'</button>'}
-function drawFull(){var L=sy?['!@#$%^&*()','-_=+[]{}|\\',';:\'",.<>/?','~`']:['1234567890','qwertyuiop','asdfghjkl','zxcvbnm'];
- var up=function(c){return !sy&&sh&&/[a-z]/.test(c)?c.toUpperCase():c};
- var h=L.map(function(r,i){var s='<div class="vr">';if(i==3&&!sy)s+='<button class="fn'+(sh?' on':'')+'" data-k="SH">⇧</button>';
-  s+=r.split('').map(function(c){return kb(up(c),i==0&&!sy?'num':(i==3&&sy?'hf':''))}).join('');if(i==3)s+='<button class="fn" data-k="BS">⌫</button>';return s+'</div>'}).join('');
- h+='<div class="vr"><button class="fn" data-k="SY">'+(sy?'abc':'#+=')+'</button>'+kb('@')+kb('.')+kb('_')+kb('-')+'<button class="sp" data-k=" ">␣</button><button class="cl" data-k="CL">✖</button><button class="ok" data-k="OK">✔ Xong</button></div>';
+function kb(c,cls,lab){return '<button'+(cls?' class="'+cls+'"':'')+' data-k="'+A(c)+'">'+A(lab||c)+'</button>'}
+function drawFull(){var h='',up=function(c){return sh?c.toUpperCase():c},ch=function(r,cls){return r.split('').map(function(c){return kb(up(c),cls)}).join('')};
+ if(pg=='sym'){
+  h+='<div class="vr">'+ch('!@#$%^&*()')+'</div><div class="vr">'+ch('-_=+[]{}|\\')+'</div><div class="vr">'+kb(';')+kb(':')+kb("'")+kb('"')+kb(',')+kb('.')+kb('<')+kb('>')+kb('/')+kb('?')+'</div>'+
+  '<div class="vr">'+'~`\u20ab\u20ac\u00a3\u00a5\u00b0\u2022\u2764'.split('').map(function(c){return kb(c,'hf')}).join('')+'<button class="fn" data-k="BS">\u232b</button></div>'+
+  '<div class="vr"><button class="fn" data-k="PG:abc">abc</button><button class="sp" data-k=" ">\u2423</button><button class="cl" data-k="CL">\u2716</button><button class="ok" data-k="OK">\u2714 Xong</button></div>'}
+ else if(pg=='vn'){
+  h+='<div class="vh">1) G\u00f5 ch\u1eef tr\u01b0\u1edbc \u00b7 2) b\u1ea5m d\u1ea5u \u0111\u1ec3 \u0111\u1eb7t l\u00ean ch\u1eef v\u1eeba g\u00f5</div>'+
+  '<div class="vr">'+ch('\u0103\u00e2\u00ea\u00f4\u01a1\u01b0\u0111','num')+'</div>'+
+  '<div class="vr">'+TN.map(function(m,i){return kb('T'+i,'tn',TL[i])}).join('')+'</div>'+
+  '<div class="vr"><button class="fn'+(sh?' on':'')+'" data-k="SH">\u21e7</button>'+ch('aeiouy')+'<button class="fn" data-k="BS">\u232b</button></div>'+
+  '<div class="vr"><button class="fn" data-k="PG:abc">abc</button><button class="sp" data-k=" ">\u2423</button><button class="cl" data-k="CL">\u2716</button><button class="ok" data-k="OK">\u2714 Xong</button></div>'}
+ else{
+  var L=['1234567890','qwertyuiop','asdfghjkl','zxcvbnm'];
+  h+=L.map(function(r,i){var s='<div class="vr">';if(i==3)s+='<button class="fn'+(sh?' on':'')+'" data-k="SH">\u21e7</button>';s+=ch(r,i==0?'num':'');if(i==3)s+='<button class="fn" data-k="BS">\u232b</button>';return s+'</div>'}).join('')+
+  '<div class="vr"><button class="fn" data-k="PG:sym">#+=</button><button class="fn" data-k="PG:vn">\u0103\u00e2\u01a1</button>'+kb('@')+kb('.')+'<button class="sp" data-k=" ">\u2423</button><button class="cl" data-k="CL">\u2716</button><button class="ok" data-k="OK">\u2714 Xong</button></div>'}
  K.className='full';K.innerHTML=h}
-function draw(){if(isFull())return drawFull();K.className='';var n=isNm(),lc=function(c){return /[A-Z]/.test(c)&&n&&!sh?c.toLowerCase():c};
- K.innerHTML=R.map(function(r,i){return '<div class="vr">'+(i==3&&n?'<button class="fn'+(sh?' on':'')+'" data-k="SH">⇧</button>':'')+r.split('').map(function(c){return '<button'+(i==0?' class="num"':'')+' data-k="'+lc(c)+'">'+lc(c)+'</button>'}).join('')+(i==3?'<button class="fn" data-k="BS">⌫</button>':'')+'</div>'}).join('')+
- '<div class="vr"><button class="cl" data-k="CL">✖ Đóng</button>'+(n?'<button class="sp" data-k=" ">␣ Dấu cách</button>':'')+'<button class="ok" data-k="OK">✔ Xong</button></div>'}
+function drawCode(){K.className='';K.innerHTML=R.map(function(r,i){return '<div class="vr">'+r.split('').map(function(c){return '<button'+(i==0?' class="num"':'')+' data-k="'+c+'">'+c+'</button>'}).join('')+(i==3?'<button class="fn" data-k="BS">\u232b</button>':'')+'</div>'}).join('')+
+ '<div class="vr"><button class="cl" data-k="CL">\u2716 \u0110\u00f3ng</button><button class="ok" data-k="OK">\u2714 Xong</button></div>'}
+function draw(){if(isCode())return drawCode();drawFull()}
 function ev(e){e.dispatchEvent(new Event('input',{bubbles:true}));if(isNm())sh=!e.value||/ $/.test(e.value);draw()}
+function tone(e,i){var v=e.value;if(!v)return;var a=Array.from(v),last=a.pop(),d=last.normalize('NFD').replace(/[\u0300\u0301\u0303\u0309\u0323]/g,'');if(!/^[aeiouyAEIOUY]/.test(d))return;e.value=a.join('')+(d+TN[i]).normalize('NFC');ev(e)}
 function key(k){var e=el();if(!e)return close();
- if(k=='CL')return close();if(k=='SH'){sh=!sh;return draw()}if(k=='SY'){sy=!sy;return draw()}
- if(k=='BS'){e.value=e.value.slice(0,-1);return ev(e)}
+ if(k=='CL')return close();if(k=='SH'){sh=!sh;return draw()}
+ if(k.indexOf('PG:')==0){pg=k.slice(3);return draw()}
+ if(k.charAt(0)=='T'&&k.length==2&&/\d/.test(k.charAt(1)))return tone(e,+k.charAt(1));
+ if(k=='BS'){e.value=Array.from(e.value).slice(0,-1).join('');return ev(e)}
  if(k=='OK'){var id=T,a=OKA;close();if(a){try{new Function(a)()}catch(x){}}else if(id=='code'||id=='cd'){var b=document.querySelector('[data-act="join-room"],[data-a="join"]');if(b)b.click()}return}
  var m=+e.getAttribute('maxlength')||99;if(e.value.length>=m)return;e.value+=k;ev(e)}
 function unadj(){if(ADJ){ADJ.style.transform='';ADJ=null}}
 function adjust(e){unadj();var a=e;while(a&&a!==document.body){if(getComputedStyle(a).position=='fixed'){var c=e.closest('.card')||e,r=c.getBoundingClientRect(),over=r.bottom+10-(innerHeight-K.offsetHeight);if(over>0){var dy=Math.min(over,Math.max(0,r.top-8));c.style.transition='transform .2s';c.style.transform='translateY('+(-dy)+'px)';ADJ=c}return}a=a.parentElement}}
 function close(){if(K)K.style.display='none';document.body.style.paddingBottom='';unadj();clearInterval(CH);var e=el();if(e)e.removeAttribute('inputmode');T=null;OKA=''}
-function open(id,ok){var e=document.getElementById(id);if(!e)return;if(!K)build();if(T==id)return close();var o=el();if(o)o.removeAttribute('inputmode');T=id;OKA=ok||'';sh=isFull()?false:(isNm()?!e.value:true);sy=false;e.setAttribute('inputmode','none');e.blur();draw();K.style.display='block';document.body.style.paddingBottom=K.offsetHeight+'px';adjust(e);clearInterval(CH);CH=setInterval(function(){if(T&&!document.getElementById(T))close()},400);setTimeout(function(){e.scrollIntoView({block:'center',behavior:'smooth'})},50)}
+function open(id,ok){var e=document.getElementById(id);if(!e)return;if(!K)build();if(T==id)return close();var o=el();if(o)o.removeAttribute('inputmode');T=id;OKA=ok||'';pg='abc';sh=NM[id]?!e.value:false;e.setAttribute('inputmode','none');e.blur();draw();K.style.display='block';document.body.style.paddingBottom=K.offsetHeight+'px';adjust(e);clearInterval(CH);CH=setInterval(function(){if(T&&!document.getElementById(T))close()},400);setTimeout(function(){e.scrollIntoView({block:'center',behavior:'smooth'})},50)}
 document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.vkb');if(b){e.preventDefault();open(b.getAttribute('data-vk'),b.getAttribute('data-ok'))}},true);
 window.vk=open;
 })();
@@ -956,6 +942,7 @@ var f1=window.FIN;window.FIN=function(d){if(d)clr();return f1.apply(this,argumen
 window.addEventListener('pagehide',save);
 async function resume(){
  var v=LS(KEY);if(!v||!v.code||!v.rt||!v.id)return false;
+ {var uc=(new URLSearchParams(location.search).get('code')||'').trim().toUpperCase();if(uc&&uc!==String(v.code).toUpperCase()){clr();return false}}
  try{
   modal('<div class="big">⏳</div><h3>Đang vào lại phòng…</h3>');
   RT=v.rt;ME=v.id;await fbRefresh();

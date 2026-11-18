@@ -565,6 +565,6 @@
   /* link có kèm game (g=...) thì biết ngay game nào, không cần tra mã trên mạng */
   const quick = (code, gid) => { const g = GAMES.find(x => x.id === gid); code = String(code || '').trim().toUpperCase(); return g && /^[A-Z0-9]{3,8}$/.test(code) ? { game: g, code, url: g.dir + 'index.html?code=' + code } : null; };
 
-  window.Hub = { FB, GAMES, S, fb, warm, login, restore, logout, listBanks, legacyCount, migrateLegacy, createSession, recent, forget, codeStatus, resolve, quick, studentLink, rid,
+  window.Hub = { GAMES, warm, login, restore, logout, listBanks, legacyCount, migrateLegacy, createSession, recent, forget, codeStatus, resolve, quick, studentLink,
     readQFile, buildQs, imgPaths, indexImages, findImg, saveBank, renameBank, deleteBank, listSessions, deleteSession, cleanTs };
 })();

@@ -7,7 +7,7 @@ index.html        Trang cho HỌC SINH: nhập mã, vào đúng game
 admin.html        Dashboard cho THẦY CÔ: đăng nhập 1 lần, chọn dữ liệu, chọn game, tạo mã
 hub.js            Lõi dùng chung + DANH SÁCH GAME (thêm game mới ở đây)
 games/
-  kho-bau/        Truy Tìm Kho Báu  (index.html, play.html, admin.html)
+  kho-bau/        Truy Tìm Kho Báu  (index.html, admin.html)
   doi-vang/       Đổi Vàng          (index.html, admin.html)
   bao-ve/         Bảo vệ vương quốc (index.html, admin.html, cau-hoi-mau.xlsx)
   chay-dua/       Chạy đua (index.html, admin.html, race*.js/css) – xem games/chay-dua/HUONG-DAN.md, CẦN thêm Rules cho nhánh race

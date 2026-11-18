@@ -17,21 +17,26 @@ body{overflow:auto}
 @media(max-width:960px){.wrapA{grid-template-columns:1fr}}
 .panel{background:rgba(255,255,255,.96);border-radius:20px;padding:14px 16px;box-shadow:0 8px 24px #0003}
 .panel h3{margin:0 0 8px;color:#0f172a}
-.lanes{display:flex;flex-direction:column;gap:6px;max-height:68vh;overflow:auto}
-.ln{display:flex;align-items:center;gap:8px}
-.ln .nm{flex:0 0 150px;font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ln .nm small{color:#64748b;font-weight:700}
-.ln .tk{position:relative;flex:1;height:46px;border-radius:12px;background:#475569;border:2px solid #fff;overflow:hidden}
-.ln .tk .grass{position:absolute;left:0;right:0;top:0;height:5px;background:#4ade80}
-.ln .tk .lane{position:absolute;left:0;right:0;top:55%;height:3px;background:repeating-linear-gradient(90deg,#fff 0 18px,transparent 18px 36px);opacity:.45}
-.ln .tk .fl{position:absolute;right:0;top:0;bottom:0;width:26px;background:repeating-conic-gradient(#111 0 25%,#fff 0 50%) 0 0/13px 13px;border-left:2px solid #fff}
-.ln .tk s{position:absolute;top:0;bottom:0;width:1px;background:#ffffff30}
-.ln .rn{position:absolute;top:6px;transform:translateX(-50%);transition:left .9s cubic-bezier(.4,0,.2,1);text-align:center;line-height:1}
-.ln .rn .ra{font-size:28px;display:block;filter:drop-shadow(0 3px 2px #0006);animation:run .5s ease-in-out infinite alternate}
-.ln .rn.fin .ra{animation:none}.ln .rn.fz .ra{filter:drop-shadow(0 0 8px #7dd3fc) saturate(.3);animation:none}
-.ln .rn .ri{position:absolute;left:50%;top:-6px;transform:translateX(-50%);font-style:normal;font-size:20px}
-.ln .x{flex:0 0 28px;padding:2px 0;font-size:13px;background:#e5e7eb;color:#475569;box-shadow:none}
-.ln.fz .tk{box-shadow:0 0 0 3px #7dd3fc}.ln.bk .tk{box-shadow:0 0 0 3px #f97316}
+.lanes{max-height:78vh;overflow:auto;border-radius:14px}
+/* Đường đua chung: mọi người chơi chạy trên cùng một con đường nhiều làn (giống mẫu đua xe) */
+.rd2{--sp:190px;--fw:30px;position:relative;min-height:300px;background:#555b66;overflow:hidden;border-radius:6px;transition:height .4s}
+.rd2 .curb{position:absolute;left:0;right:0;height:10px;z-index:1;background:repeating-linear-gradient(90deg,#e53935 0 22px,#fff 22px 44px)}
+.rd2 .curb.t{top:0}.rd2 .curb.b{bottom:0}
+.rd2 .dv{position:absolute;left:0;right:0;height:4px;opacity:.75;background:repeating-linear-gradient(90deg,#e5e7eb 0 70px,transparent 70px 140px)}
+.rd2 .stl{position:absolute;top:10px;bottom:10px;left:calc(var(--sp) - 6px);width:3px;background:#ffffff66}
+.rd2 .fin2{position:absolute;right:0;top:0;bottom:0;width:var(--fw);z-index:1;background:repeating-conic-gradient(#111 0 25%,#fff 0 50%) 0 0/15px 15px}
+.rd2 .tk2{position:absolute;top:10px;bottom:10px;width:1px;background:#ffffff1f}
+.rd2 .rc{position:absolute;display:flex;align-items:center;gap:3px;transform:translate(-100%,-50%);white-space:nowrap;transition:left .9s cubic-bezier(.4,0,.2,1),top .5s;z-index:2}
+.rd2 .rc.kk{cursor:pointer}
+.rd2 .rc:hover{z-index:9999!important}
+.rd2 .rc .nm2{max-width:140px;overflow:hidden;text-overflow:ellipsis;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:800;line-height:18px;color:#fff;background:#1f2a2e;border:2px solid #ea8a2b;box-shadow:0 2px 3px #0005}
+.rd2 .rc.lead .nm2{background:#ea8a2b;border-color:#ea8a2b}
+.rd2 .rc .av{position:relative;display:block;font-size:20px;line-height:1;filter:drop-shadow(0 2px 2px #0006);animation:run .5s ease-in-out infinite alternate}
+.rd2 .rc.fin .av{animation:none}
+.rd2 .rc.fz .av{filter:drop-shadow(0 0 8px #7dd3fc) saturate(.3);animation:none}
+.rd2 .rc.fz .nm2{border-color:#7dd3fc;background:#0c4a6e}
+.rd2 .rc.bk .nm2{border-color:#f97316;background:#7c2d12}
+.rd2 .rc .ri{position:absolute;right:0;top:-12px;font-style:normal;font-size:16px;z-index:3}
 .feed{max-height:34vh;overflow:auto;font-size:15px}.feed div{padding:5px 0;border-bottom:1px solid #e5e7eb}
 .big2{font-size:clamp(34px,6vw,64px);font-weight:900;text-align:center;color:#c2410c}
 .rank li{display:flex;gap:8px;align-items:center;padding:4px 0;font-weight:800;list-style:none}.rank{margin:0;padding:0}
@@ -55,6 +60,7 @@ body{overflow:auto}
 <a class="dash" href="../../admin.html" title="Về dashboard chung">⌂ Dashboard chung</a>
 
 <script>window.APPMODE = 'admin';</script>
+<script src="../../vk.js"></script>
 <script src="race.js"></script>
 <script>
 (function () {
@@ -72,7 +78,7 @@ body{overflow:auto}
 
   function login(msg) {
     app.innerHTML = `<div class="lg"><form id="f"><h2>🏁 Chạy đua – Admin</h2>
-      <input class="fld" id="pw" type="password" placeholder="Mật khẩu admin" autocomplete="current-password">
+      <span class="pww"><input class="fld" id="pw" type="password" placeholder="Mật khẩu admin" autocomplete="current-password"><button type="button" class="vkb" data-vk="pw" data-ok="document.getElementById('f').requestSubmit()" style="right:54px" title="Bàn phím ảo" aria-label="Bàn phím ảo">⌨️</button><button type="button" class="pwb" title="Hiện mật khẩu" aria-label="Hiện mật khẩu" onmousedown="event.preventDefault()" onclick="var i=document.getElementById('pw'),h=i.type=='password';i.type=h?'text':'password';this.textContent=h?'🙈':'👁️';i.focus()">👁️</button></span>
       <div class="err" id="er">${esc(msg || '')}</div><button class="ego" id="go">Đăng nhập</button></form></div>`;
     $('#f').onsubmit = async e => {
       e.preventDefault(); ADMPW = $('#pw').value; $('#er').textContent = '';
@@ -156,26 +162,34 @@ body{overflow:auto}
 
   /* ---------- Vẽ (khung vẽ 1 lần theo trạng thái; làn đua cập nhật tại chỗ để avatar chạy mượt) ---------- */
   let shell = '';
-  const posLeft = pct => `calc(14px + ${(pct * 94).toFixed(2)}% - ${(pct * 40).toFixed(1)}px)`;
-  function laneRow(r, ticks) {
-    return `<div class="ln" data-id="${r.id}"><div class="nm"></div><div class="tk"><div class="grass"></div><div class="lane"></div>${ticks}<div class="fl"></div>
-      <div class="rn"><span class="ra"></span><i class="ri"></i></div></div>${CTL && S.status !== 'ended' ? `<button class="x" data-k="${r.id}" title="Mời ra khỏi phòng">✕</button>` : ''}</div>`;
+  const SP = 190, FW = 30;   /* vùng xuất phát (chừa chỗ cho nhãn tên) và vạch đích, px */
+  const posLeft = pct => `calc(${SP}px + (100% - ${SP + FW}px) * ${pct.toFixed(4)})`;
+  function buildRoad(box) {
+    const ticks = NQ <= 60 ? Array.from({ length: Math.max(0, NQ - 1) }, (_, k) => `<i class="tk2" style="left:calc(${SP}px + (100% - ${SP + FW}px) * ${((k + 1) / NQ).toFixed(4)})"></i>`).join('') : '';
+    box.innerHTML = `<div class="rd2"><div class="curb t"></div><div class="curb b"></div>${[25, 50, 75].map(t => `<i class="dv" style="top:${t}%"></i>`).join('')}<div class="stl"></div>${ticks}<div class="fin2"></div></div>`;
+    return box.firstChild;
   }
   function updLanes() {
     const box = $('#lanes'); if (!box) return;
-    const ticks = Array.from({ length: Math.max(0, NQ - 1) }, (_, k) => `<s style="left:${((k + 1) / NQ * 94).toFixed(2)}%"></s>`).join('');
-    const ranks = {}; L().forEach((r, i) => ranks[r.id] = i + 1);
     const ids = Object.keys(PL).filter(k => PL[k] && PL[k].name).sort((a, b) => (PL[a].joined | 0) - (PL[b].joined | 0));
-    box.querySelectorAll('.ln').forEach(e => { if (!PL[e.dataset.id]) e.remove(); });
-    box.querySelectorAll('.hint').forEach(e => e.remove());
-    ids.forEach(id => { if (!box.querySelector('.ln[data-id="' + id + '"]')) box.insertAdjacentHTML('beforeend', laneRow({ id }, ticks)); });
-    if (!ids.length) box.innerHTML = '<p class="hint">Chưa có người chơi. Gửi mã hoặc link cho học sinh.</p>';
-    ids.forEach(id => {
-      const r = PL[id], e = box.querySelector('.ln[data-id="' + id + '"]'), pct = Math.min(1, (r.pos | 0) / NQ), f = r.fin > 0, rn = e.querySelector('.rn');
-      e.className = 'ln' + (FZ[id] ? ' fz' : '') + (BK[id] ? ' bk' : '');
-      e.querySelector('.nm').innerHTML = `${f ? '🏁' : '#' + ranks[id]} ${esc(r.name)} <small>${r.pos | 0}/${NQ}</small>`;
-      rn.className = 'rn' + (f ? ' fin' : '') + (FZ[id] ? ' fz' : ''); rn.style.left = posLeft(pct);
-      { const ra = rn.querySelector('.ra'); if (ra.dataset.a !== String(r.av)) { ra.dataset.a = String(r.av); ra.innerHTML = avOf(r.av); } } rn.querySelector('.ri').textContent = FZ[id] ? '❄️' : BK[id] ? '⏪' : '';
+    let rd = box.querySelector('.rd2');
+    if (!ids.length) { box.innerHTML = '<p class="hint">Chưa có người chơi. Gửi mã hoặc link cho học sinh.</p>'; return; }
+    if (!rd) rd = buildRoad(box);
+    const n = ids.length, H = Math.max(300, Math.min(n * 34 + 24, 720));
+    rd.style.height = H + 'px';
+    const ranks = {}; L().forEach((r, i) => ranks[r.id] = i + 1);
+    rd.querySelectorAll('.rc').forEach(e => { if (!PL[e.dataset.id]) e.remove(); });
+    ids.forEach((id, i) => {
+      const r = PL[id], pct = Math.min(1, (r.pos | 0) / NQ), f = r.fin > 0;
+      let e = rd.querySelector('.rc[data-id="' + id + '"]');
+      if (!e) { rd.insertAdjacentHTML('beforeend', `<div class="rc" data-id="${id}"><span class="nm2"></span><span class="av"></span><i class="ri"></i></div>`); e = rd.lastChild; }
+      e.className = 'rc' + (CTL && S.status !== 'ended' ? ' kk' : '') + (ranks[id] === 1 && (r.pos | 0) > 0 ? ' lead' : '') + (f ? ' fin' : '') + (FZ[id] ? ' fz' : '') + (BK[id] ? ' bk' : '');
+      if (CTL && S.status !== 'ended') e.dataset.k = id; else delete e.dataset.k;
+      e.style.left = posLeft(pct); e.style.top = (10 + (i + .5) * (H - 20) / n).toFixed(1) + 'px'; e.style.zIndex = 10 + (r.pos | 0) + (f ? 500 : 0);
+      e.title = `${r.name} · ${r.pos | 0}/${NQ}` + (e.dataset.k ? ' (bấm để mời ra khỏi phòng)' : '');
+      const nm = e.querySelector('.nm2'), t = (f ? '🏁 ' : '') + r.name; if (nm.textContent !== t) nm.textContent = t;
+      const av = e.querySelector('.av'); if (av.dataset.a !== String(r.av)) { av.dataset.a = String(r.av); av.innerHTML = avOf(r.av); }
+      e.querySelector('.ri').textContent = FZ[id] ? '❄️' : BK[id] ? '⏪' : '';
     });
   }
   function draw() {
@@ -196,7 +210,7 @@ body{overflow:auto}
       const g = id => document.getElementById(id);
       if (g('bS')) g('bS').onclick = startRace; if (g('bE')) g('bE').onclick = () => endRace(false);
       g('bL').onclick = () => copy(link()); if (g('bC')) g('bC').onclick = csv;
-      $('.wrapA').addEventListener('click', e => { const b = e.target.closest('.x'); if (b) kick(b.dataset.k); });
+      $('.wrapA').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) kick(b.dataset.k); });
     }
     $('#cnt').textContent = '👥 ' + P.length;
     if (ended) { const sp = $('#sumP'); if (sp) sp.innerHTML = `<div class="big2">🏆 Cuộc đua kết thúc</div>${sumHtml(PL, LGall, QS, NQ, '')}`; }

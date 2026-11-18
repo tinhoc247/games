@@ -3,9 +3,6 @@ let busy=false,DRG=-1,SK=0,CQ=null,CB=null,RCB=null,IU=null,DQ=null,H=[],ST={ok:
 function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
 function modal(h){const m=$('#modal'),b=$('#mbox'),was=m.style.display=='flex';b.innerHTML=h;m.style.display='flex';b.classList.remove('in');void b.offsetWidth;b.classList.add('in');b.scrollTop=0}
 function close_(){$('#modal').style.display='none'}
-function toQ(r){r=r.map(x=>x==null?'':String(x).trim());const o=r.slice(1,5).filter(Boolean);const a=r[5];let i=-1;
- if(/^[A-Da-d]$/.test(a))i=a.toUpperCase().charCodeAt(0)-65;else if(/^[1-4]$/.test(a))i=+a-1;else i=o.findIndex(x=>x==a);
- return(!r[0]||o.length<2||i<0||i>=o.length)?null:{q:r[0],o,a:i,img:r[6]||''}}
 function shO(o,oi,a){const p=shuffle(o.keys()),inv=[];p.forEach((k,n)=>inv[k]=n);let ni=oi;if(oi){ni=Array.isArray(oi)?p.map(k=>oi[k]):Object.fromEntries(p.map((k,n)=>[n,oi[k]]).filter(e=>e[1]))}return{o:p.map(k=>o[k]),oi:ni,a:a.map(v=>inv[v])}}
 function norm(x,rt){rt=rt===true;const im=[x.image,x.preImage].find(s=>s)||'',b={q:x.question,img:im,ex:x.explain||'',hint:x.hint||'',imgPos:x.imagePosition,oi:x.optionImages},t=x.type,A=[].concat(x.answer);
  if(t=='single'&&x.options){const r=shO(x.options,b.oi,A);return{...b,oi:r.oi,ty:'single',o:r.o,a:r.a[0]}}
@@ -29,7 +26,6 @@ function rs(s){if(!s||/^(data:|https?:|blob:)/.test(s))return s;if(/^lib:/.test(
 function imgH(s,c){return s?`<img class="${c||'qimg'}" src="${esc(rs(s))}" data-s="${esc(s)}" alt="" onerror="imgErr(this)" onclick="this.classList.toggle('zoom')">`:''}
 async function preImgs(s){const r=[...new Set(String(s||'').match(/lib:[A-Za-z0-9]+:i\d+/g)||[])].filter(k=>!IM['~'+k]);
  for(let i=0;i<r.length;i+=6)await Promise.all(r.slice(i,i+6).map(async k=>{const[,id,key]=k.split(':');try{const v=await fb(('libimg/'+id+'/'+key));if(typeof v=='string'&&v)IM['~'+k]=v}catch(e){}}))}
-async function qLoad(c){const r=(await fb(G('quiz/'+c)))||'[]';await preImgs(r);return JSON.parse(r).map(x=>norm(x)).filter(Boolean)}
 function imgErr(e){const x=document.createElement('span');x.className='imgerr';x.textContent='🖼️ Không tải được hình: '+(e.dataset.s||'');e.replaceWith(x)}
 function ob(q,i,p){const o=q.oi&&q.oi[i],m=o&&o.src?imgH(o.src,'oimg'):'',t=(p||'')+esc(q.o[i]);return o&&o.position=='after'?t+m:m+t}
 
