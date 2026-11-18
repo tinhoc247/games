@@ -21,6 +21,7 @@ Khi tạo mã (dashboard, bước 3) thầy/cô chọn **Kiểu chiến trườn
 - Bắn trúng đối phương: **+100 vàng**. Bị hạ: trả lời đúng một câu hỏi để hồi sinh ở vị trí ngẫu nhiên (sai thì **bắt buộc làm lại đúng câu đó**, đáp án được xáo lại, cho tới khi đúng mới hồi sinh).
 - 4 **xưởng** ở 4 góc (vùng an toàn, không bắn được, không bị bắn). Vào xưởng: **[1] nâng giáp** (1000 vàng, +1 lớp chịu 1 phát, tối đa 3) · **[2] nâng súng** (1000 vàng, tối đa 3).
 - **Súng cấp N bỏ qua N lớp giáp**: nếu giáp của đối thủ còn trên N thì chỉ mất 1 lớp; còn từ N trở xuống thì bị hạ gục. (Cấp 0 + giáp 0 = hạ gục; cấp 1 phá 1 giáp; cấp 3 phá 3 giáp.)
+- **Trúng đạn: giáp hạ dần từng cấp (mỗi phát mất 1 cấp)** cho tới khi hết giáp thì bị tiêu diệt; súng giữ nguyên khi trúng đạn. Khi hồi sinh, giáp và súng về cấp ban đầu (0), phải vào xưởng mua lại.
 - Giá nâng súng không nêu trong đề nên đặt 1000 vàng như giáp (hằng `COST` trong `index.html`).
 - Trò chơi kết thúc khi hết thời gian (phút do admin đặt).
 

@@ -279,17 +279,17 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     const d = dmg(me, b.L); fx(me.x, me.y); Snd.bad();
     if (!solo) fb(TG('events/' + CODE), 'POST', { t: 'h', f: b.o, to: ME, d, ts: { '.sv': 'timestamp' } }).catch(() => {});
     else { const bt = BOTS.find(x => x.id === b.o); if (bt) { bt.g += 100; if (d) bt.k++; } }
-    if (d) die(); else toast('🛡️ Giáp đỡ 1 phát! Còn ' + me.armor + ' lớp.'); save();
+    if (d) die(); else toast('🛡️ Giáp đỡ 1 phát! Giáp hạ còn ' + me.armor + ' cấp.'); save();
   }
   function hitBot(t, b) {
     const d = dmg(t, b.L); fx(t.x, t.y); me.gold += 100; me.gt += 100; FX.push({ x: t.x, y: t.y - 30, t: 0, tx: '+100' }); Snd.step();
     if (d) { me.k++; t.alive = false; t.rs = now() + 3500; toast('💥 Em hạ gục ' + t.name + '!', true); } save();
   }
-  function die() { me.alive = false; me.d++; me.armor = 0; save(); askRespawn(false); }
+  function die() { me.alive = false; me.d++; me.armor = 0; me.gun = 0; save(); askRespawn(false); }
   /* Bị hạ: trả lời đúng để hồi sinh. Sai thì BẮT BUỘC làm lại đúng câu đó (đáp án xáo lại) cho tới khi đúng. */
   function askRespawn(retry, i) {
     if (phase !== 'play') return; if (i == null) i = VALID[Math.random() * VALID.length | 0]; const q = norm(RAW[i], true) || norm(RAW[VALID[0]], true); q.idx = i;
-    showQ(q, ok => { if (phase !== 'play') return close_(); if (ok) { close_(); spawn(); toast('✅ Hồi sinh ở vị trí ngẫu nhiên!', true); } else askRespawn(true, i); },
+    showQ(q, ok => { if (phase !== 'play') return close_(); if (ok) { close_(); me.armor = 0; me.gun = 0; spawn(); toast('✅ Hồi sinh ở vị trí ngẫu nhiên! Giáp và súng về ban đầu.', true); } else askRespawn(true, i); },
       `<div class="retry">${retry ? '↩️ Chưa đúng! Em phải trả lời lại đúng câu này mới được hồi sinh.' : '💥 Xe tăng của em bị bắn hạ! Trả lời đúng để hồi sinh.'}</div>`);
   }
   function buy(k) {
