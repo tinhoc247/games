@@ -48,7 +48,7 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
 <div class="ov" id="ovC"><div class="cnt" id="ovCn">3</div></div>
 <div class="ov" id="ovZ"><div class="pop"><div class="big">⏸️</div><h3>Game đang tạm dừng</h3><p>Game chơi ở chế độ toàn màn hình.</p><button class="ego" id="bZ">▶ Chơi tiếp</button></div></div>
 <div class="tools"><button id="bSnd" title="Âm thanh">🔊</button></div>
-<script src="../chay-dua/race.js"></script>
+<script>window.MUSIC_THEME = 'tank';</script><script src="../../music-themes.js"></script><script src="../chay-dua/race.js"></script>
 <script src="../chay-dua/race-q.js"></script>
 <script>
 (function () {
@@ -176,7 +176,7 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
   /* ---------- Vào phòng ---------- */
   const taken = () => new Set(Object.values(PL).map(v => v && v.av));
   function showEntry(msg) {
-    app.innerHTML = `<div class="entry"><main class="ecard pk"><div class="ebadge">💥</div><h2>Tank War</h2><p class="hint">Mã phòng: <b>${esc(CODE)}</b></p>
+    app.innerHTML = `<div class="entry"><main class="ecard pk"><div class="ebadge">💥</div><h2>${esc((S && S.title) || 'Tank War')}</h2><p class="hint">${S && S.mode === 'solo' ? 'Bài tập về nhà' : 'Tank War'} · mã <b>${esc(CODE)}</b></p>
       <span class="vkw"><input class="fld" id="jN" maxlength="20" placeholder="Nhập tên của em" autocomplete="off"><button type="button" class="vkb" data-vk="jN" data-ok="document.getElementById('jB').click()" title="Bàn phím ảo" aria-label="Bàn phím ảo">⌨️</button></span>${S && S.mode === 'solo' && S.map === 'pick' ? '<p class="hint">Chọn chiến trường</p><div id="mps"></div>' : (S && MAPS[S.map === 'random' ? MKEYS[Math.abs(+S.seed || 1) % MKEYS.length] : S.map] ? '<p class="hint">Chiến trường: <span class="mapt">' + MAPS[S.map === 'random' ? MKEYS[Math.abs(+S.seed || 1) % MKEYS.length] : S.map].ic + ' ' + MAPS[S.map === 'random' ? MKEYS[Math.abs(+S.seed || 1) % MKEYS.length] : S.map].n + '</span></p>' : '')}<p class="hint">Chọn nhân vật ngồi trên xe tăng</p><div id="avs"></div>
       <div class="err" id="jE">${esc(msg || '')}</div><button class="ego" id="jB">Vào chiến trường ➜</button></main></div>`;
     drawAv(); drawMaps(); $('#jB').onclick = join; $('#jN').addEventListener('keydown', e => { if (e.key === 'Enter') join(); }); $('#jN').focus();

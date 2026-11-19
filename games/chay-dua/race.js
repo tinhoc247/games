@@ -282,17 +282,8 @@ const Snd = (() => {
   }
 
   /* ---------- Nhạc nền vui nhộn (trống + bass + giai điệu vui), chỉ phát trong lúc đua ---------- */
-  const BAR = 1.8, E = BAR / 8, MVOL = .2, fq = s => 261.63 * 2 ** (s / 12);
-  const MUS_CH = [[0, 0], [-5, 0], [-3, 1], [-7, 0], [0, 0], [-5, 0], [-7, 0], [-5, 0]];
-  const MUS_ML = [
-    [[0, 7, 1], [1, 7, 1], [2, 9, 1], [3, 7, 1], [4, 12, 3], [7, 9, 1]],
-    [[0, 11, 1], [1, 11, 1], [2, 12, 1], [3, 11, 1], [4, 7, 3], [7, 4, 1]],
-    [[0, 9, 1], [1, 9, 1], [2, 12, 1], [3, 9, 1], [4, 16, 3], [7, 12, 1]],
-    [[0, 12, 1], [1, 12, 1], [2, 9, 1], [3, 5, 1], [4, 9, 3], [7, 7, 1]],
-    [[0, 7, 1], [1, 7, 1], [2, 9, 1], [3, 7, 1], [4, 12, 3], [7, 14, 1]],
-    [[0, 16, 1], [1, 14, 1], [2, 11, 1], [3, 14, 1], [4, 11, 3], [7, 7, 1]],
-    [[0, 9, 1], [1, 12, 1], [2, 16, 1], [3, 12, 1], [4, 17, 2], [6, 16, 1], [7, 12, 1]],
-    [[0, 14, 1], [1, 14, 1], [2, 11, 1], [3, 14, 1], [4, 7, 2], [6, 11, 1], [7, 14, 1]]];
+  const TH = (window.HubThemes || {})[window.MUSIC_THEME || 'race'] || { bar: 1.8, vol: .15, play() {} };   /* chủ đề nhạc: xem music-themes.js */
+  const BAR = TH.bar, E = BAR / 8, MVOL = TH.vol, fq = s => 261.63 * 2 ** (s / 12);
   let MS = null, mg = null, dm = null, mOn = false, mTimer = null, nt = 0, mstep = 0;
   function mnote(f, t, d, type, v, a, bus, lp) {
     const o = C.createOscillator(), g = C.createGain(); o.type = type; o.frequency.value = f;
@@ -308,16 +299,7 @@ const Snd = (() => {
     const s = C.createBufferSource(), fl = C.createBiquadFilter(), g = C.createGain(); s.buffer = noise(C); fl.type = type; fl.frequency.value = f;
     g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d); s.connect(fl); fl.connect(g); g.connect(dm); s.start(t, Math.random()); s.stop(t + d + .02);
   }
-  function playBar(t) {
-    const bar = mstep++ % 8, c = MUS_CH[bar], r = c[0], tn = c[1] ? [0, 3, 7] : [0, 4, 7];
-    for (let b = 0; b < 4; b++) mkick(t + b * 2 * E);
-    [2, 6].forEach(i => mnoise(t + i * E, .14, .4, 2000, 'bandpass'));
-    for (let i = 0; i < 8; i++) mnoise(t + i * E, i % 2 ? .07 : .03, i % 2 ? .18 : .09, 8000, 'highpass');
-    if (bar == 7) for (let k = 1; k < 4; k++) mnoise(t + (6 + k / 2) * E, .08, .28, 2500, 'bandpass');
-    for (let i = 0; i < 8; i++) mnote(fq(r - 12 + (i == 7 ? 7 : i % 2 ? 12 : 0)), t + i * E, E * .8, 'sawtooth', .1, .005, mg, 900);
-    for (let i = 1; i < 8; i += 2) tn.forEach(x => mnote(fq(r + x), t + i * E, E * .45, 'square', .013, .004));
-    MUS_ML[bar].forEach(n => mnote(fq(n[1]), t + n[0] * E, E * n[2] * .92, 'square', .04, .01));
-  }
+  function playBar(t) { TH.play({ ctx: C, E, fq, note: mnote, kick: mkick, noise: mnoise, mg, dm }, t, mstep++); }
   function mInit(c) {
     if (MS) return;
     MS = c.createGain(); MS.gain.value = 0;

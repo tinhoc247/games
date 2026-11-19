@@ -26,7 +26,7 @@
 <div class="tools"><button id="bSnd" title="Bật/tắt âm thanh" aria-label="Âm thanh">🔊</button><button id="bFs" title="Toàn màn hình" aria-label="Toàn màn hình">⛶</button></div>
 
 <script src="../../vk.js"></script>
-<script src="race.js"></script>
+<script src="../../music-themes.js"></script><script src="race.js"></script>
 <script src="race-q.js"></script>
 <script>
 (function () {
@@ -57,7 +57,7 @@
   /* ---------- Màn hình vào phòng ---------- */
   function showEntry(msg) {
     app.innerHTML = `<div class="entry"><main class="ecard pk"><div class="ebadge">🏁</div>
-      <h2>Chạy đua</h2><p class="hint">Mã phòng: <b>${esc(CODE)}</b></p>
+      <h2>${esc((S && S.title) || 'Chạy đua')}</h2><p class="hint">Chạy đua · mã <b>${esc(CODE)}</b></p>
       <span class="vkw"><input class="fld" id="jN" maxlength="20" placeholder="Nhập tên của em" autocomplete="off"><button type="button" class="vkb" data-vk="jN" data-ok="document.getElementById('jB').click()" title="Bàn phím ảo" aria-label="Bàn phím ảo">⌨️</button></span>
       <p class="hint" style="margin-top:6px">Chọn nhân vật đua của em</p><div id="avs"></div>
       <div class="err" id="jE">${esc(msg || '')}</div>
