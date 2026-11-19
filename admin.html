@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head><script src="quota.js"></script>
+<head><script src="quota.js"></script><script src="version.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dashboard Mini Games</title>
@@ -58,6 +58,7 @@ button,input,select{font:inherit;color:inherit}
 header.top{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px clamp(14px,3vw,32px);color:#fff;
   background:linear-gradient(100deg,#4B32C9,#6C4DF6 45%,#B04CF0);box-shadow:0 6px 24px -8px rgba(76,50,201,.6)}
 header.top h1{font:800 23px/1 var(--f-code);margin:0;flex:1;min-width:180px;display:flex;align-items:center;gap:10px}
+header.top h1 .ver{margin-left:10px;padding:2px 9px;border-radius:99px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.16);color:#fff;font:700 12px/1.4 inherit;cursor:pointer;box-shadow:none;vertical-align:middle}
 header.top h1 .logo{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;font-size:22px;background:linear-gradient(145deg,#FFD35C,#FF9F43);box-shadow:0 3px 0 rgba(0,0,0,.18);animation:bob 3s ease-in-out infinite}
 header.top a,header.top button{display:inline-flex;align-items:center;gap:6px;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:12px;padding:8px 14px;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;transition:.18s;backdrop-filter:blur(6px)}
 header.top a:hover,header.top button:hover{background:#fff;color:var(--violet-d);transform:translateY(-1px)}
@@ -239,7 +240,7 @@ table.rt .mini.go{background:var(--violet);border-color:var(--violet);color:#fff
 
 <div id="app" class="hide">
   <header class="top">
-    <h1><span class="logo" aria-hidden="true">🎮</span>Dashboard Mini Games</h1>
+    <h1><span class="logo" aria-hidden="true">🎮</span>Dashboard Mini Games<button type="button" class="ver" id="ver" title="Xem lịch sử cập nhật"></button></h1>
     <button type="button" id="repBtn" aria-haspopup="dialog">📊 Báo cáo</button>
     <a href="index.html" target="_blank" rel="noopener">👀 Trang học sinh</a>
     <button type="button" id="tsBtn" title="Xoá dữ liệu giờ máy chủ của học sinh cũ (Đổi Vàng / Bảo vệ)">🧹 Dọn ts</button>
@@ -360,6 +361,7 @@ table.rt .mini.go{background:var(--violet);border-color:var(--violet);color:#fff
     try{await Hub.login(pw);enter()}catch(er){$('#lerr').textContent=er.message}
     $('#lb').disabled=false;
   });
+  $('#ver').textContent='v'+HUB_VERSION;$('#ver').addEventListener('click',()=>alert('Lịch sử cập nhật\n\n'+HUB_CHANGELOG.map(c=>'v'+c[0]+' ('+c[1]+')\n'+c[2]).join('\n\n')));
   $('#out').addEventListener('click',()=>{Hub.logout();location.reload()});
 
   async function enter(){
