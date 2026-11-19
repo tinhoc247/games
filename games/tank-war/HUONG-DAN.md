@@ -9,6 +9,12 @@ Xe tăng nhìn từ trên xuống, dùng chung thư viện câu hỏi của hub.
    - **Offline (bài tập về nhà)**: thầy/cô chọn **Mở từ – Đóng lúc**; ngoài khung giờ này học sinh không vào mới được (bạn đã vào trận trước giờ đóng vẫn chơi nốt lượt của mình). Thời gian chơi là của **mỗi lượt từng bạn**. Mã mở trong khung giờ; mỗi bạn chơi một mình đấu với **số xe tăng máy** do thầy/cô chọn. Đồng hồ chạy riêng cho từng bạn từ lúc vào trận (tải lại trang không làm lại giờ). Điểm của từng bạn nằm trong bảng ở phòng điều khiển / CSV.
 3. **Xếp hạng**: theo **số lần hạ đối thủ**, hòa thì xét **vàng đang có**. Chế độ chia đội cộng điểm theo cùng thứ tự.
 
+## Quản lý người chơi (kick)
+Ở phòng điều khiển có khung **👥 Người tham gia** liệt kê mọi bạn đã vào phòng (theo thứ tự vào). Bấm dấu **✕** cạnh tên để loại bạn đặt tên không phù hợp hoặc gian lận: bạn đó bị đẩy ra ngay (thấy thông báo "bị mời ra khỏi phòng"), bị ghi vào `tank/kicked/<mã>/<uid>` nên không thể vào lại hay ghi dữ liệu nữa. **Cần dán lại Rules** (xem dưới) vì có thêm nhánh `kicked`. Trang xem báo cáo (`rep`) không có nút này.
+
+## Giảm giật lắc
+Phòng chờ chỉ cập nhật danh sách khi có người vào/ra (không vẽ lại cả khung nữa), bỏ hiệu ứng nảy ở huy hiệu, bảng xếp hạng trong trận có chiều rộng cố định và chỉ vẽ lại khi số liệu đổi.
+
 ## Kiểu chiến trường
 Khi tạo mã (dashboard, bước 3) thầy/cô chọn **Kiểu chiến trường**: 🗺️ Hỗn hợp (rừng – đồng bằng – đồi núi, như cũ) · 🌲 Rừng rậm · 🏜️ Sa mạc · ❄️ Tuyết nguyên · 🏙️ Thành phố đổ nát (nhà cao tầng chắn đạn, đường phố) · 🎲 Ngẫu nhiên · 🙋 Học sinh tự chọn (chỉ chế độ Offline; chế độ Online dùng chung 1 bản đồ nên tự về Hỗn hợp). Mỗi kiểu có địa hình, vật cản và tốc độ di chuyển riêng. Cả lớp trong cùng một mã luôn thấy cùng một bản đồ. Mã cũ không có lựa chọn này vẫn chơi như Hỗn hợp.
 

@@ -19,6 +19,10 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
 #hr .avs{width:20px;height:20px}
 #shop{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:6;display:none;gap:12px;background:#000d;color:#fff;padding:12px 16px;border-radius:18px;text-align:center}
 #shop button{font-size:17px;padding:10px 16px}#shop small{display:block;font-weight:600;opacity:.85}
+/* Giảm giật lắc: không nảy huy hiệu, không chạy lại hiệu ứng xuất hiện khi danh sách đổi */
+.ecard,.ebadge{animation:none!important}
+#hr{width:250px;box-sizing:border-box;font-variant-numeric:tabular-nums}#hr div{white-space:nowrap;min-height:24px}#hr div>span:nth-of-type(2){overflow:hidden;text-overflow:ellipsis;min-width:0}
+.plist .pc{animation:none}
 .stag{font-weight:900;color:#fde047;margin:0 0 6px;width:100%}
 .sumt{width:100%;border-collapse:collapse;font-size:17px}.sumt td,.sumt th{padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:left}.sumt tr.me{background:#fef3c7;font-weight:800}
 .sumt .avs{width:26px;height:26px;vertical-align:middle}
@@ -193,6 +197,7 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     try {
       S = await fb(TG('sessions/' + CODE)); if (!S) throw Error('Phòng không còn tồn tại.'); if (S.status === 'ended') throw Error('Trận này đã kết thúc.');
       hwCheck(S); if (S.mode === 'solo' && S.map === 'pick') LS('tankMap_' + CODE, joinMap);
+      if (await fb(TG('kicked/' + CODE + '/' + ME))) throw Error('Em đã bị mời ra khỏi phòng này.');
       PL = (await fb(TG('players/' + CODE))) || {};
       const team = +S.teams > 0 && S.mode !== 'solo' ? Object.keys(PL).length % (+S.teams) : -1;
       await fb(TG('players/' + CODE + '/' + ME), 'PUT', { name, av: joinAv, team, g: 0, gt: 0, k: 0, d: 0, ar: 0, gu: 0, al: 0, joined: Date.now() });
@@ -229,11 +234,19 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     if (raceInCountdown(sa, OFF)) { if (phase !== 'count') { phase = 'count'; app.innerHTML = ''; raceCountdown(sa, OFF, $('#ovC'), $('#ovCn'), () => startPlay(sa + CD_LEAD + CD_GO, false)); } return; }
     startPlay(sa + CD_LEAD + CD_GO, false);
   }
+  let waitKey = null;
   function drawWait() {
-    phase = 'wait'; const L = Object.values(PL).filter(v => v && v.name);
-    app.innerHTML = `<div class="entry"><main class="ecard wide"><div class="ebadge">⏳</div><h2>Đang chờ xuất phát…</h2>
+    const L = Object.values(PL).filter(v => v && v.name);
+    if (phase !== 'wait' || !$('#plw')) {
+      phase = 'wait'; waitKey = null;
+      app.innerHTML = `<div class="entry"><main class="ecard wide"><div class="ebadge">⏳</div><h2>Đang chờ xuất phát…</h2>
       <p class="hint">Thầy/cô bấm <b>Bắt đầu</b> là cả lớp vào trận! ${mapLabel() ? 'Chiến trường: <b>' + mapLabel() + '</b> · ' : ''}Thời gian: <b>${+S.dur || 10} phút</b>${+S.teams > 0 ? ' · chia ' + S.teams + ' đội' : ''}</p>
-      <div class="plist">${L.map(r => `<span class="pc">${avOf(r.av)} ${esc(r.name)}</span>`).join('')}</div></main></div>`;
+      <p class="hint" id="plc"></p><div class="plist" id="plw"></div></main></div>`;
+    }
+    const key = L.map(r => r.av + '|' + r.name).sort().join('\n');
+    if (key === waitKey) return; waitKey = key;
+    $('#plc').innerHTML = '👥 <b>' + L.length + '</b> bạn đã vào phòng';
+    $('#plw').innerHTML = L.map(r => `<span class="pc">${avOf(r.av)} ${esc(r.name)}</span>`).join('');
   }
   async function fbEv(lk) {
     const q = 'orderBy=' + encodeURIComponent('"$key"') + (lk ? '&startAt=' + encodeURIComponent('"' + lk + '"') : '&limitToLast=1');
@@ -310,7 +323,7 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     try {
       const [s, p, ev] = await Promise.all([fb(TG('sessions/' + CODE)), fb(TG('players/' + CODE)), solo ? {} : fbEv(lastKey)]);
       if (!s) { ticking = false; return gone('Phòng đã bị xoá.'); }
-      S = s; PL = p || {}; if (!PL[ME]) { ticking = false; return gone('Em đã được mời ra khỏi phòng.'); }
+      S = s; PL = p || {}; if (!PL[ME]) { ticking = false; return gone('Em đã bị thầy/cô mời ra khỏi phòng.'); }
       Object.keys(ev).sort().forEach(k => { if (seen.has(k)) return; seen.add(k); lastKey = k; onEv(ev[k]); });
       Object.keys(PL).forEach(id => { if (id === ME || !PL[id] || !PL[id].name) return; const r = PL[id], t = TK[id] = TK[id] || { id, x: r.x || 0, y: r.y || 0, b: 0, a: 0 }; const nx = r.x || 0, ny = r.y || 0, tn = performance.now(); if (nx !== t.tx0 || ny !== t.ty0) { const sec = (tn - (t.pt || 0)) / 1000; if (t.pt && sec > .1 && sec < 1.5) { t.vx = (nx - t.tx0) / sec; t.vy = (ny - t.ty0) / sec; } else t.vx = t.vy = 0; t.tx0 = nx; t.ty0 = ny; t.tx = nx; t.ty = ny; t.pt = tn; if (!t.init) { t.x = nx; t.y = ny; t.init = 1; } }
         Object.assign(t, { name: r.name, av: r.av, team: r.team == null ? -1 : r.team, armor: r.ar | 0, gun: r.gu | 0, alive: !!r.al, ta: r.a || 0, tb: r.b || 0 }); });
@@ -433,8 +446,10 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
   }
   function hud() {
     const left = Math.max(0, END - now()), m = Math.floor(left / 60000), s = Math.floor(left % 60000 / 1000);
-    $('#hl').innerHTML = `<span class="pl">💰 ${me.gold}</span><span class="pl">🛡️ ${lv(me.armor)}/3</span><span class="pl">🔫 ${lv(me.gun)}/3</span><span class="pl">${MAPS[MAP].ic} ${MAPS[MAP].n}</span><span class="pl">💥 ${me.k}</span><span class="pl">⏱️ ${m}:${String(s).padStart(2, '0')}</span>`;
-    $('#hr').innerHTML = '<b style="display:block;margin-bottom:4px">🏆 Xếp hạng</b>' + board().slice(0, 6).map((r, i) => `<div class="${r.me ? 'me' : ''}"><span>${['🥇', '🥈', '🥉'][i] || i + 1}</span>${avOf(r.av)} ${r.team >= 0 ? `<i style="color:${TC[r.team % 6]}">●</i>` : ''}<span>${esc(r.name)}</span><b>💥${r.k} · 💰${r.g}</b></div>`).join('');
+    const hl = `<span class="pl">💰 ${me.gold}</span><span class="pl">🛡️ ${lv(me.armor)}/3</span><span class="pl">🔫 ${lv(me.gun)}/3</span><span class="pl">${MAPS[MAP].ic} ${MAPS[MAP].n}</span><span class="pl">💥 ${me.k}</span><span class="pl">⏱️ ${m}:${String(s).padStart(2, '0')}</span>`;
+    if (hl !== hud.hl) { hud.hl = hl; $('#hl').innerHTML = hl; }
+    const hr = '<b style="display:block;margin-bottom:4px">🏆 Xếp hạng</b>' + board().slice(0, 6).map((r, i) => `<div class="${r.me ? 'me' : ''}"><span>${['🥇', '🥈', '🥉'][i] || i + 1}</span>${avOf(r.av)} ${r.team >= 0 ? `<i style="color:${TC[r.team % 6]}">●</i>` : ''}<span>${esc(r.name)}</span><b>💥${r.k} · 💰${r.g}</b></div>`)  .join('');
+    if (hr !== hud.hr) { hud.hr = hr; $('#hr').innerHTML = hr; }
   }
 
   /* ---------- Kết thúc ---------- */
