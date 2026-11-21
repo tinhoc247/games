@@ -17,6 +17,10 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
 #hr{right:12px;top:10px;background:#000a;padding:8px 12px;border-radius:12px;font-size:14px;min-width:220px}
 #hr div{display:flex;gap:6px;align-items:center;padding:2px 0}#hr b{margin-left:auto}#hr .me{color:#fde047}
 #hr .avs{width:20px;height:20px}
+/* Bảng xếp hạng & "Xe của em" mặc định thu gọn thành biểu tượng nhỏ để không che màn chơi; bấm vào để mở/đóng */
+#hr,#veh{pointer-events:auto;cursor:pointer}
+#hr.c{width:auto;min-width:0;padding:6px 12px;font-size:16px;white-space:nowrap}
+#veh.c{padding:5px 12px 5px 6px;gap:8px;border-radius:14px;font-size:15px;font-weight:800}#veh.c canvas{width:40px;height:40px}
 #shop{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:6;display:none;gap:12px;background:#000d;color:#fff;padding:12px 16px;border-radius:18px;text-align:center}
 #shop button{font-size:17px;padding:10px 16px}#shop small{display:block;font-weight:600;opacity:.85}
 /* Giảm giật lắc: không nảy huy hiệu, không chạy lại hiệu ứng xuất hiện khi danh sách đổi */
@@ -313,6 +317,9 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
   const digitOf = e => /^(Digit|Numpad)([12])$/.test(e.code || '') ? e.code.slice(-1) : String(e.key || '');
   addEventListener('keydown', e => { const k = keyId(e); keys[k] = 1; if (phase === 'play' && me.alive && !paused && !e.repeat) { const d = digitOf(e); if (d === '1') buy('a'); if (d === '2') buy('g'); } if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k) && phase === 'play') e.preventDefault(); });
   addEventListener('keyup', e => { keys[keyId(e)] = 0; });
+  let hrOpen = false, vehOpen = false;
+  $('#hr').addEventListener('click', () => { hrOpen = !hrOpen; hud.hr = null; hud(); });
+  $('#veh').addEventListener('click', () => { vehOpen = !vehOpen; vehKey = ''; vehCard(); });
   const releaseAll = () => { keys = {}; mouse.d = false; mouse.r = false; TCH.joy = null; TCH.aim = null; };
   addEventListener('blur', releaseAll); document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
   cv.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
@@ -552,10 +559,11 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
   }
   /* Bảng "Xe của em": hình xe + tên cấp giáp / vũ khí hiện có */
   function vehCard() {
-    const A = lv(me.armor), G = lv(me.gun), key = [A, G, me.team, avi(me.av).complete ? 1 : 0].join();
+    const A = lv(me.armor), G = lv(me.gun), key = [A, G, me.team, avi(me.av).complete ? 1 : 0, vehOpen ? 1 : 0].join();
     if (key === vehKey) return; vehKey = key;
     const pips = (n, k) => [0, 1, 2].map(i => `<i class="pip${i < n ? ' on ' + k : ''}"></i>`).join('');
-    $('#veh').innerHTML = `<canvas id="vc" width="150" height="150"></canvas><div class="vt"><b>🪖 Xe của em</b>
+    $('#veh').classList.toggle('c', !vehOpen); $('#veh').title = vehOpen ? 'Bấm để thu gọn' : 'Bấm để xem giáp & vũ khí';
+    $('#veh').innerHTML = !vehOpen ? `<canvas id="vc" width="150" height="150"></canvas><div class="vt">🛡️${A} 🔫${G}</div>` : `<canvas id="vc" width="150" height="150"></canvas><div class="vt"><b>⚙️ Xe của em</b>
       <div class="vr">🛡️ <span>${ARM[A].n}</span><small>${pips(A, 'a')} ${ARM[A].d}</small></div>
       <div class="vr">🔫 <span>${GUN[G].n}</span><small>${pips(G, 'g')} ${GUN[G].d}</small></div></div>`;
     const g = $('#vc').getContext('2d'); g.translate(75, 75); g.scale(1.5, 1.5); body(g, { b: -Math.PI / 2, a: -Math.PI / 2, armor: A, gun: G, av: me.av }, me.team >= 0 ? TC[me.team % 6] : '#22c55e');
@@ -590,7 +598,8 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     const left = Math.max(0, END - now()), m = Math.floor(left / 60000), s = Math.floor(left % 60000 / 1000);
     const hl = `<span class="pl">💰 ${me.gold}</span><span class="pl">🛡️ ${lv(me.armor)}/3</span><span class="pl">🔫 ${lv(me.gun)}/3</span><span class="pl">${MAPS[MAP].ic} ${MAPS[MAP].n}</span><span class="pl">💥 ${me.k}</span><span class="pl">⏱️ ${m}:${String(s).padStart(2, '0')}</span>${(() => { const rt = Math.round(NETQ.rtt); return rt ? `<span class="pl" style="${rt > 800 ? 'background:#b91c1cdd' : rt > 400 ? 'background:#b45309dd' : ''}">📶 ${rt}ms${rt > 800 ? ' · mạng chậm' : ''}</span>` : ''; })()}`;
     if (hl !== hud.hl) { hud.hl = hl; $('#hl').innerHTML = hl; }
-    const hr = '<b style="display:block;margin-bottom:4px">🏆 Xếp hạng</b>' + board().slice(0, 6).map((r, i) => `<div class="${r.me ? 'me' : ''}"><span>${['🥇', '🥈', '🥉'][i] || i + 1}</span>${avOf(r.av)} ${r.team >= 0 ? `<i style="color:${TC[r.team % 6]}">●</i>` : ''}<span>${esc(r.name)}</span><b>💥${r.k} · 💰${r.g}</b></div>`)  .join('');
+    const bd = board(), rk = bd.findIndex(r => r.me) + 1; $('#hr').classList.toggle('c', !hrOpen); $('#hr').title = hrOpen ? 'Bấm để thu gọn' : 'Bấm để xem bảng xếp hạng';
+    const hr = !hrOpen ? `🏆 <b style="display:inline;margin:0">#${rk}</b> · 💥${me.k}` : '<b style="display:block;margin-bottom:4px">🏆 Xếp hạng</b>' + bd.slice(0, 6).map((r, i) => `<div class="${r.me ? 'me' : ''}"><span>${['🥇', '🥈', '🥉'][i] || i + 1}</span>${avOf(r.av)} ${r.team >= 0 ? `<i style="color:${TC[r.team % 6]}">●</i>` : ''}<span>${esc(r.name)}</span><b>💥${r.k} · 💰${r.g}</b></div>`)  .join('');
     if (hr !== hud.hr) { hud.hr = hr; $('#hr').innerHTML = hr; }
   }
 
