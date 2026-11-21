@@ -10,7 +10,7 @@
 <style>
 :root{--hh:0px}
 body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
-#cv{position:fixed;inset:0;width:100%;height:100%;display:none;cursor:crosshair;z-index:1}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:none;cursor:crosshair;z-index:1;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .hud{position:fixed;z-index:5;pointer-events:none;color:#fff;font-weight:800;text-shadow:0 2px 3px #000;display:none}
 .hud .pl{display:inline-block;margin:0 6px 6px 0;background:#000a;padding:6px 12px;border-radius:12px;font-size:17px}
 #hl{left:12px;top:10px;max-width:62vw}
@@ -58,14 +58,45 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
   const W = 2600, HH = 1700, R = 22, SHOP = 210, COST = 1000, TC = ['#ef4444', '#3b82f6', '#eab308', '#a855f7', '#14b8a6', '#f97316'];
   const app = $('#app'), cv = $('#cv'), c = cv.getContext('2d');
   const LS = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (_) { return null; } };
-  let S = null, PL = {}, RAW = [], VALID = [], OFF = 0, phase = 'join', joinAv = '', solo = false, END = 0, TI = null, lastKey = '', seen = new Set(), TER = null, OB = [], MAP = 'mix', joinMap = 'mix', vehKey = '';
+  let S = null, PL = {}, RAW = [], VALID = [], OFF = 0, phase = 'join', joinAv = '', solo = false, END = 0, TI = null, lastKey = '', TE = null, seen = new Set(), TER = null, OB = [], MAP = 'mix', joinMap = 'mix', vehKey = '';
   let me = { x: 0, y: 0, b: 0, a: 0, armor: 0, gun: 0, gold: 0, gt: 0, k: 0, d: 0, alive: false, inv: 0, team: -1, name: '', av: '' };
-  let camInit = 0, lastDt = .016, BOTS = [], TK = {}, BU = [], FX = [], paused = false, nextShot = 0, mouse = { x: 0, y: 0, d: false }, keys = {}, cw = 0, ch = 0, cx = 0, cy = 0, lastSave = 0, lastHud = 0, last = 0;
+  let camInit = 0, lastDt = .016, BOTS = [], TK = {}, BU = [], FX = [], paused = false, nextShot = 0, mouse = { x: 0, y: 0, d: false, r: false }, keys = {}, cw = 0, ch = 0, cx = 0, cy = 0, lastSave = 0, lastHud = 0, last = 0;
   const turn = (a, t, k) => { let d = Math.atan2(Math.sin(t - a), Math.cos(t - a)); return a + d * Math.min(1, k); };
   const now = () => Date.now() + OFF, cl = (v, a, b) => Math.max(a, Math.min(b, v)), rnd = (a, b) => a + Math.random() * (b - a);
   const toast = (t, g) => { const d = document.createElement('div'); if (g) d.className = 'good'; d.textContent = t; $('#toast').appendChild(d); setTimeout(() => d.remove(), 3200); };
   $('#bSnd').textContent = Snd.mute ? '🔇' : '🔊'; $('#bSnd').onclick = () => { $('#bSnd').textContent = Snd.toggle() ? '🔇' : '🔊'; };
   const sameTeam = (a, b) => a >= 0 && a === b;
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const isTouch = 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0;
+
+  /* ---------- Mạng: mọi yêu cầu có thời hạn chờ + thử lại + đo độ trễ ----------
+     Trước đây một yêu cầu bị treo (mạng chậm/chập chờn) làm vòng cập nhật đứng vĩnh viễn: không thấy trận bắt đầu,
+     không nhận được đạn/điểm. Giờ mỗi yêu cầu tự huỷ sau thời hạn và vòng sau chạy lại. */
+  const NETQ = { rtt: 0, fails: 0 }, DBU = RACE_CFG.databaseURL.replace(/\/$/, '');
+  async function tfb(p, m, b, o) {
+    o = o || {}; if (!TOK) await fbAuth();
+    const ac = new AbortController(), tm = setTimeout(() => ac.abort(), o.to || 7000), t0 = performance.now(), M = m || 'GET';
+    try {
+      const r = await fetch(DBU + '/' + p + '.json?' + (o.q ? o.q + '&' : '') + 'auth=' + TOK, { method: M, headers: b === undefined ? undefined : { 'Content-Type': 'application/json' }, body: b === undefined ? undefined : JSON.stringify(b), signal: ac.signal });
+      if (r.status === 401 && !o.again) { clearTimeout(tm); await fbRefresh(); return tfb(p, m, b, Object.assign({}, o, { again: 1 })); }
+      if (!r.ok) { let e = ''; try { const j = await r.json(); e = j && j.error || ''; } catch (_) {} throw Error(r.status === 401 || r.status === 403 ? 'Không có quyền truy cập dữ liệu (' + (e || r.status) + '). Cần thêm Rules cho vùng "tank" (xem HUONG-DAN.md).' : 'Database ' + r.status + (e ? ': ' + e : '')); }
+      const j = r.status === 204 ? null : await r.json();
+      if (M === 'GET') { const dt = performance.now() - t0; NETQ.rtt = NETQ.rtt ? NETQ.rtt * .7 + dt * .3 : dt; }
+      NETQ.fails = 0; return j;
+    } catch (e) { NETQ.fails++; if (e && e.name === 'AbortError') throw Error('Mạng quá chậm, đang thử lại…'); if (e instanceof TypeError) throw Error('Mất kết nối mạng, đang thử lại…'); throw e; } finally { clearTimeout(tm); }
+  }
+  /* đọc có thử lại (vào phòng / vào lại): một yêu cầu rớt do mạng chập chờn không làm hỏng cả lần vào */
+  async function tget(p, o) { o = o || {}; const n = o.retry == null ? 3 : o.retry; for (let i = 0; ; i++) { try { return await tfb(p, 'GET', undefined, o); } catch (e) { if (i >= n || /quyền|Database [34]/.test(e.message)) throw e; await sleep(300 * (i + 1)); } } }
+  /* ghi quan trọng (sự kiện bắn / trúng đạn): thử lại vài lần; trùng lặp được loại bằng mã id ở phía nhận */
+  async function tpost(p, m, b, tries) { tries = tries || 4; for (let i = 0; i < tries; i++) { try { return await tfb(p, m, b, { to: 6000 }); } catch (e) { if (/quyền/.test(e.message) || i === tries - 1) throw e; await sleep(350 * (i + 1)); } } }
+  /* độ lệch đồng hồ so với máy chủ: lấy mẫu có độ trễ (RTT) thấp nhất cho chính xác */
+  let OFFRTT = 1e9;
+  async function syncClock(n) {
+    for (let i = 0; i < n; i++) {
+      try { const t0 = Date.now(), r = await tfb(TG('players/' + CODE + '/' + ME), 'PATCH', { ping: { '.sv': 'timestamp' } }, { to: 6000 }), t1 = Date.now(); if (r && +r.ping > 0 && t1 - t0 < OFFRTT) { OFFRTT = t1 - t0; OFF = +r.ping - (t0 + t1) / 2; } } catch (_) {}
+      if (i < n - 1) await sleep(500);
+    }
+  }
 
   /* ---------- Cấp giáp & vũ khí (tên + mô tả hiển thị trên xe và bảng "Xe của em") ---------- */
   const ARM = [{ n: 'Thép mỏng', d: 'Chưa có giáp phụ' }, { n: 'Giáp thép', d: '1 lớp giáp phụ' }, { n: 'Giáp composite', d: '2 lớp giáp phụ' }, { n: 'Giáp phản ứng', d: '3 lớp giáp phụ' }];
@@ -178,6 +209,7 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
   function showEntry(msg) {
     app.innerHTML = `<div class="entry"><main class="ecard pk"><div class="ebadge">💥</div><h2>${esc((S && S.title) || 'Tank War')}</h2><p class="hint">${S && S.mode === 'solo' ? 'Bài tập về nhà' : 'Tank War'} · mã <b>${esc(CODE)}</b></p>
       <span class="vkw"><input class="fld" id="jN" maxlength="20" placeholder="Nhập tên của em" autocomplete="off"><button type="button" class="vkb" data-vk="jN" data-ok="document.getElementById('jB').click()" title="Bàn phím ảo" aria-label="Bàn phím ảo">⌨️</button></span>${S && S.mode === 'solo' && S.map === 'pick' ? '<p class="hint">Chọn chiến trường</p><div id="mps"></div>' : (S && MAPS[S.map === 'random' ? MKEYS[Math.abs(+S.seed || 1) % MKEYS.length] : S.map] ? '<p class="hint">Chiến trường: <span class="mapt">' + MAPS[S.map === 'random' ? MKEYS[Math.abs(+S.seed || 1) % MKEYS.length] : S.map].ic + ' ' + MAPS[S.map === 'random' ? MKEYS[Math.abs(+S.seed || 1) % MKEYS.length] : S.map].n + '</span></p>' : '')}<p class="hint">Chọn nhân vật ngồi trên xe tăng</p><div id="avs"></div>
+      <p class="hint" style="font-size:13px;margin:8px 0 0">🎮 Lái: <b>WASD</b> hoặc <b>←↑↓→</b> (đang gõ tiếng Việt thì dùng phím mũi tên) · giữ <b>chuột phải</b> để đi tới con trỏ · điện thoại/máy tính bảng: kéo ngón <b>bên trái</b> để lái, chạm <b>bên phải</b> để ngắm &amp; bắn.</p>
       <div class="err" id="jE">${esc(msg || '')}</div><button class="ego" id="jB">Vào chiến trường ➜</button></main></div>`;
     drawAv(); drawMaps(); $('#jB').onclick = join; $('#jN').addEventListener('keydown', e => { if (e.key === 'Enter') join(); }); $('#jN').focus();
   }
@@ -195,13 +227,18 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     const name = $('#jN').value.trim(), er = t => $('#jE').textContent = t; if (!name) return er('Nhập tên của em nhé.');
     $('#jB').disabled = true; er('Đang vào…'); Snd.unlock();
     try {
-      S = await fb(TG('sessions/' + CODE)); if (!S) throw Error('Phòng không còn tồn tại.'); if (S.status === 'ended') throw Error('Trận này đã kết thúc.');
+      /* Mọi yêu cầu đọc chạy SONG SONG (phòng, danh sách, câu hỏi, mốc sự kiện) rồi 1 lệnh ghi hồ sơ kèm mốc giờ máy chủ:
+         vào phòng còn ~2 lượt mạng thay vì 5–6 lượt nối đuôi (mạng chậm từng mất >10 s mới lái được) */
+      const [s, kicked, pl, raw, e0] = await Promise.all([tget(TG('sessions/' + CODE)), tget(TG('kicked/' + CODE + '/' + ME)), tget(TG('players/' + CODE)), tget(TG('quiz/' + CODE), { to: 40000 }), fbEvLast()]);
+      S = s; if (!S) throw Error('Phòng không còn tồn tại.'); if (S.status === 'ended') throw Error('Trận này đã kết thúc.');
       hwCheck(S); if (S.mode === 'solo' && S.map === 'pick') LS('tankMap_' + CODE, joinMap);
-      if (await fb(TG('kicked/' + CODE + '/' + ME))) throw Error('Em đã bị mời ra khỏi phòng này.');
-      PL = (await fb(TG('players/' + CODE))) || {};
+      if (kicked) throw Error('Em đã bị mời ra khỏi phòng này.');
+      PL = pl || {};
       const team = +S.teams > 0 && S.mode !== 'solo' ? Object.keys(PL).length % (+S.teams) : -1;
-      await fb(TG('players/' + CODE + '/' + ME), 'PUT', { name, av: joinAv, team, g: 0, gt: 0, k: 0, d: 0, ar: 0, gu: 0, al: 0, joined: Date.now() });
-      LS('tankGame', { code: CODE, id: ME, rt: RT }); await enter(true);
+      const rec = { name, av: joinAv, team, g: 0, gt: 0, k: 0, d: 0, ar: 0, gu: 0, al: 0, joined: Date.now() };
+      const t0 = Date.now(), r = await tpost(TG('players/' + CODE + '/' + ME), 'PUT', Object.assign({ ping: { '.sv': 'timestamp' } }, rec)), t1 = Date.now();
+      if (r && +r.ping > 0) { OFFRTT = t1 - t0; OFF = +r.ping - (t0 + t1) / 2; }
+      LS('tankGame', { code: CODE, id: ME, rt: RT }); await enter(true, rec, { raw, e0 });
     } catch (e) { $('#jB').disabled = false; er(e.message); }
   }
   /* Bài tập về nhà: chỉ cho vào trong khoảng [start, end] (giờ máy chủ ≈ giờ máy + OFF) */
@@ -212,17 +249,19 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     if (t < +s.start) throw Error('Bài tập chưa mở. Em quay lại sau ' + hwFmt(+s.start) + ' nhé.');
     if (t > +s.end) throw Error('Bài tập đã đóng lúc ' + hwFmt(+s.end) + '.');
   }
-  async function enter(fresh) {
-    S = (await fb(TG('sessions/' + CODE))) || S; solo = S.mode === 'solo';
-    const raw = await fb(TG('quiz/' + CODE)); await preImgs(raw); RAW = JSON.parse(raw || '[]'); VALID = RAW.map((x, i) => norm(x) ? i : -1).filter(i => i >= 0);
+  async function enter(fresh, rec, pre) {
+    if (!S) S = await tget(TG('sessions/' + CODE));
+    solo = S.mode === 'solo';
+    let raw, e0, m;
+    if (pre) { raw = pre.raw; e0 = pre.e0; m = rec; }
+    else { let m0; [raw, , m0, e0] = await Promise.all([tget(TG('quiz/' + CODE), { to: 40000 }), syncClock(1), tget(TG('players/' + CODE + '/' + ME)), solo ? {} : fbEvLast()]); m = m0 || {}; }
+    await preImgs(raw); RAW = JSON.parse(raw || '[]'); VALID = RAW.map((x, i) => norm(x) ? i : -1).filter(i => i >= 0);
     if (!VALID.length) throw Error('Phòng chưa có câu hỏi hợp lệ.');
     MAP = mapKind(); build(+S.seed || (CODE.charCodeAt(0) * 7919 + CODE.charCodeAt(1) * 104729));
-    OFF = await fbClockOffset(TG('players/' + CODE + '/' + ME));
-    const m = (await fb(TG('players/' + CODE + '/' + ME))) || {};
     if (!(m.t0 > 0)) hwCheck(S);   /* bạn đã vào trận từ trước vẫn được chơi nốt lượt của mình */
     Object.assign(me, { name: m.name, av: m.av, team: m.team == null ? -1 : m.team, gold: m.g | 0, gt: m.gt | 0, k: m.k | 0, d: m.d | 0, armor: m.ar | 0, gun: m.gu | 0, id: ME });
-    const e0 = await fbEv(''); Object.keys(e0).forEach(k => seen.add(k)); lastKey = Object.keys(e0).sort().pop() || '';
-    clearInterval(TI); TI = setInterval(tick, solo ? 4000 : 700); await tick();
+    Object.keys(e0 || {}).forEach(k => seen.add(k)); lastKey = Object.keys(e0 || {}).sort().pop() || '';
+    readPlayers(); clearInterval(TI); clearInterval(TE); TI = setInterval(tick, solo ? 4000 : 700); TE = solo ? null : setInterval(tickE, 350); tick();
     if (solo) { if (m.t0 > 0) startPlay(m.t0, false); else { phase = 'count'; app.innerHTML = ''; raceCountdown(now(), OFF, $('#ovC'), $('#ovCn'), () => startPlay(now(), true)); } }
     else route();
   }
@@ -248,28 +287,55 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     $('#plc').innerHTML = '👥 <b>' + L.length + '</b> bạn đã vào phòng';
     $('#plw').innerHTML = L.map(r => `<span class="pc">${avOf(r.av)} ${esc(r.name)}</span>`).join('');
   }
+  /* Sự kiện mới kể từ khoá lk (đã gồm lk). LƯU Ý: khi chưa có sự kiện nào (lk rỗng) phải lấy TẤT CẢ — trước đây lấy "limitToLast=1"
+     nên nếu 2 phát bắn rơi vào cùng một lượt hỏi thì phát đầu bị mất (hay gặp nhất ở những phát đầu của trận). */
   async function fbEv(lk) {
-    const q = 'orderBy=' + encodeURIComponent('"$key"') + (lk ? '&startAt=' + encodeURIComponent('"' + lk + '"') : '&limitToLast=1');
-    return (await fb(TG('events/' + CODE), 'GET', undefined, q)) || {};
+    const q = 'orderBy=' + encodeURIComponent('"$key"') + (lk ? '&startAt=' + encodeURIComponent('"' + lk + '"') : '');
+    return (await tfb(TG('events/' + CODE), 'GET', undefined, { q, to: 5000 })) || {};
   }
+  async function fbEvLast() { return (await tget(TG('events/' + CODE), { q: 'orderBy=' + encodeURIComponent('"$key"') + '&limitToLast=1', to: 8000 })) || {}; }
 
   /* ---------- Bắt đầu chơi ---------- */
   function startPlay(t0, fresh) {
     phase = 'play'; app.style.display = 'none'; cv.style.display = 'block'; ['hl', 'hr'].forEach(i => $('#' + i).style.display = 'block'); $('#veh').style.display = 'flex';
-    END = t0 + (+S.dur || 10) * 60000; if (solo) fb(TG('players/' + CODE + '/' + ME), 'PATCH', { t0 }).catch(() => {});
+    END = t0 + (+S.dur || 10) * 60000; if (solo) tpost(TG('players/' + CODE + '/' + ME), 'PATCH', { t0 }).catch(() => {}); else syncClock(3);
     if (solo) BOTS = Array.from({ length: Math.max(1, +S.bots || 4) }, (_, i) => { const b = { id: 'b' + i, name: 'Máy ' + (i + 1), av: AVS[(i * 7 + 3) % AVS.length], team: -1, bot: 1, g: 0, k: 0, gun: Math.random() < .3 ? 1 : 0, armor: (Math.random() < .4 ? 1 : 0) + (Math.random() < .15 ? 1 : 0), alive: true, b: 0, a: 0, cd: rnd(1, 2), wp: null, wt: 0 }; [b.x, b.y] = spawnPos(); return b; });
     vehKey = ''; spawn(); resize(); vehCard(); last = performance.now(); requestAnimationFrame(loop); setInterval(() => { try { Snd.music(phase === 'play'); } catch (_) {} }, 600);
-    Snd.start(); toast('💥 Vào trận! Chiến trường: ' + MAPS[MAP].ic + ' ' + MAPS[MAP].n + '. WASD/mũi tên để lái, chuột để ngắm và bắn. Về xưởng ở 4 góc để nâng cấp.', true);
+    Snd.start(); toast('💥 Vào trận! Chiến trường: ' + MAPS[MAP].ic + ' ' + MAPS[MAP].n + (isTouch ? '. Kéo ngón tay bên TRÁI để lái, chạm giữ bên PHẢI để ngắm và bắn.' : '. WASD/mũi tên để lái (hoặc giữ chuột phải), chuột trái để ngắm và bắn.') + ' Về xưởng ở 4 góc để nâng cấp.', true);
   }
   function spawn() { [me.x, me.y] = spawnPos(); me.alive = true; me.vx = me.vy = 0; me.inv = now() + 2500; save(); }
   function resize() { cw = cv.width = innerWidth; ch = cv.height = innerHeight; }
   addEventListener('resize', resize);
-  addEventListener('keydown', e => { const k = e.key.toLowerCase(); keys[k] = 1; if (phase === 'play' && me.alive && !paused) { if (k === '1') buy('a'); if (k === '2') buy('g'); } if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k) && phase === 'play') e.preventDefault(); });
-  addEventListener('keyup', e => { keys[e.key.toLowerCase()] = 0; });
+  /* Phím theo VỊ TRÍ vật lý (e.code), không theo chữ gõ ra: vẫn lái được khi bật bộ gõ tiếng Việt (Unikey/EVKey: key="Process" hoặc "ư/â/đ"),
+     bàn phím AZERTY/Dvorak, hoặc khi đang bật Caps Lock. Nếu sự kiện không có e.code thì quy chữ có dấu về phím Telex tương ứng. */
+  const KC = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd', ArrowUp: 'arrowup', ArrowDown: 'arrowdown', ArrowLeft: 'arrowleft', ArrowRight: 'arrowright' }, VNK = { 'ư': 'w', 'ơ': 'w', 'â': 'a', 'ă': 'a', 'đ': 'd' };
+  const keyId = e => KC[e.code] || (() => { const k = String(e.key || '').toLowerCase(); return VNK[k] || k; })();
+  const digitOf = e => /^(Digit|Numpad)([12])$/.test(e.code || '') ? e.code.slice(-1) : String(e.key || '');
+  addEventListener('keydown', e => { const k = keyId(e); keys[k] = 1; if (phase === 'play' && me.alive && !paused && !e.repeat) { const d = digitOf(e); if (d === '1') buy('a'); if (d === '2') buy('g'); } if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k) && phase === 'play') e.preventDefault(); });
+  addEventListener('keyup', e => { keys[keyId(e)] = 0; });
+  const releaseAll = () => { keys = {}; mouse.d = false; mouse.r = false; TCH.joy = null; TCH.aim = null; };
+  addEventListener('blur', releaseAll); document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
   cv.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-  cv.addEventListener('mousedown', e => { mouse.d = true; mouse.x = e.clientX; mouse.y = e.clientY; });
-  addEventListener('mouseup', () => { mouse.d = false; });
+  cv.addEventListener('mousedown', e => { mouse.x = e.clientX; mouse.y = e.clientY; if (e.button === 2) mouse.r = true; else mouse.d = true; });   /* chuột phải giữ = lái tới con trỏ (phương án dự phòng khi bàn phím không dùng được) */
+  addEventListener('mouseup', e => { if (e.button === 2) mouse.r = false; else mouse.d = false; });
   cv.addEventListener('contextmenu', e => e.preventDefault());
+  /* Cảm ứng: nửa trái = cần lái (kéo ngón tay), nửa phải = ngắm theo ngón tay + tự bắn khi chạm giữ */
+  const TCH = { joy: null, aim: null };
+  const tById = (e, id) => { for (const t of e.changedTouches) if (t.identifier === id) return t; return null; };
+  cv.addEventListener('touchstart', e => {
+    if (phase !== 'play') return; e.preventDefault();
+    for (const t of e.changedTouches) {
+      if (t.clientX < cw / 2) { if (!TCH.joy) TCH.joy = { id: t.identifier, ox: t.clientX, oy: t.clientY, x: t.clientX, y: t.clientY }; }
+      else if (!TCH.aim) { TCH.aim = { id: t.identifier }; mouse.x = t.clientX; mouse.y = t.clientY; mouse.d = true; }
+    }
+  }, { passive: false });
+  cv.addEventListener('touchmove', e => {
+    if (phase !== 'play') return; e.preventDefault();
+    if (TCH.joy) { const t = tById(e, TCH.joy.id); if (t) { TCH.joy.x = t.clientX; TCH.joy.y = t.clientY; } }
+    if (TCH.aim) { const t = tById(e, TCH.aim.id); if (t) { mouse.x = t.clientX; mouse.y = t.clientY; } }
+  }, { passive: false });
+  const tEnd = e => { if (TCH.joy && tById(e, TCH.joy.id)) TCH.joy = null; if (TCH.aim && tById(e, TCH.aim.id)) { TCH.aim = null; mouse.d = false; } e.preventDefault(); };
+  cv.addEventListener('touchend', tEnd, { passive: false }); cv.addEventListener('touchcancel', tEnd, { passive: false });
   /* toàn màn hình: vào ở lần chạm đầu; thoát ra thì tạm dừng */
   const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement), docE = document.documentElement;
   const reqFs = () => { try { const p = (docE.requestFullscreen || docE.webkitRequestFullscreen || (() => {})).call(docE, { navigationUI: 'hide' }); if (p && p.catch) p.catch(() => {}); } catch (_) {} };
@@ -280,17 +346,42 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
   document.addEventListener('visibilitychange', () => { if (document.hidden && phase === 'play' && fsOn()) { paused = true; $('#ovZ').style.display = 'flex'; } });
 
   /* ---------- Bắn, trúng đạn ---------- */
-  function mkBullet(o, tm, x, y, a, L, adv) { const sp = 680; BU.push({ o, tm, L, x: x + Math.cos(a) * sp * adv, y: y + Math.sin(a) * sp * adv, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.05 - adv }); }
+  const SP = 680, LIFE = 1.05, LAGW = 400;
+  function mkBullet(o, tm, x, y, a, L, adv) { BU.push({ o, tm, L, x: x + Math.cos(a) * SP * adv, y: y + Math.sin(a) * SP * adv, vx: Math.cos(a) * SP, vy: Math.sin(a) * SP, life: LIFE - adv }); }
+  let fireN = 0;
   function fire(t, mine) {
     const bx = t.x + Math.cos(t.a) * 36, by = t.y + Math.sin(t.a) * 36; mkBullet(t.id || ME, t.team, bx, by, t.a, t.gun, 0); Snd.cheer(.12, .06);
-    if (mine && !solo) fb(TG('events/' + CODE), 'POST', { t: 'f', f: ME, x: Math.round(bx), y: Math.round(by), a: +t.a.toFixed(3), L: t.gun, tm: t.team, ts: { '.sv': 'timestamp' } }).catch(() => {});
+    /* id: mã duy nhất của phát bắn (máy nhận loại trùng khi mạng chậm buộc phải gửi lại); tf: giờ máy chủ lúc bắn (ts chỉ là lúc sự kiện tới nơi) */
+    if (mine && !solo) tpost(TG('events/' + CODE), 'POST', { t: 'f', f: ME, id: ME.slice(-5) + Date.now().toString(36) + (++fireN), x: Math.round(bx), y: Math.round(by), a: +t.a.toFixed(3), L: t.gun, tm: t.team, tf: Math.round(now()), ts: { '.sv': 'timestamp' } }).catch(() => {});
+  }
+
+  /* ---------- Đạn của người khác bắn trúng MÌNH? (máy bị bắn là nơi tính sát thương) ----------
+     Lỗi cũ: sự kiện bắn tới trễ (hỏi 0,7 s + độ trễ mạng) rồi đạn bị "dịch thẳng" ra xa vị trí lẽ ra nó phải bay qua → đạn nhảy cóc qua xe,
+     người bắn thấy trúng nhưng máy bị bắn không ghi nhận (và mạng càng chậm càng hay xảy ra). Cách mới: khi nhận sự kiện, bay lại đạn từng bước
+     từ lúc bắn tới giờ và đối chiếu với LỊCH SỬ VỊ TRÍ của mình (HIST); thêm cửa sổ LAGW để bù độ trễ hiển thị của người bắn. */
+  const HIST = [], FID = new Set();
+  function checkHit(bx, by, T) {
+    if (!me.alive || shopAt(me.x, me.y) >= 0) return false;
+    for (let i = HIST.length - 1; i >= 0; i--) { const s = HIST[i]; if (s.t < T - LAGW) break; if (s.t > T + 60) continue; if (s.ok && Math.hypot(bx - s.x, by - s.y) < R + 4) return true; }
+    return false;
+  }
+  function remoteFire(e, key) {
+    const id = e.id || key; if (FID.has(id)) return; FID.add(id); if (FID.size > 600) FID.delete(FID.values().next().value);
+    const tf = e.tf > 0 && Math.abs((e.ts || e.tf) - e.tf) < 8000 ? e.tf : (e.ts || now()), age = cl((now() - tf) / 1000, 0, LIFE);
+    const bl = { o: e.f, tm: e.tm, L: e.L, id, x: e.x, y: e.y, vx: Math.cos(e.a) * SP, vy: Math.sin(e.a) * SP, life: LIFE }, mineOk = !sameTeam(e.tm, me.team), n = Math.floor(age * 30);
+    for (let i = 1; i <= n; i++) {
+      const tau = i / 30, bx = e.x + bl.vx * tau, by = e.y + bl.vy * tau;
+      if (blocked(bx, by, 2)) return;                                   /* đạn đã tắt vào vật cản */
+      if (mineOk && checkHit(bx, by, tf + tau * 1000)) { hitMe(bl); return; }
+    }
+    bl.x = e.x + bl.vx * age; bl.y = e.y + bl.vy * age; bl.life = LIFE - age; if (bl.life > 0) BU.push(bl);
   }
   const fx = (x, y, tx) => FX.push({ x, y, t: 0, tx });
   /* giáp chịu 1 phát; súng cấp L bỏ qua L lớp giáp: còn giáp hiệu dụng thì mất 1 lớp, hết thì hạ gục */
   function dmg(t, L) { if (t.armor - L > 0) { t.armor--; return 0; } return 1; }
   function hitMe(b) {
     const d = dmg(me, b.L); fx(me.x, me.y); Snd.bad();
-    if (!solo) fb(TG('events/' + CODE), 'POST', { t: 'h', f: b.o, to: ME, d, ts: { '.sv': 'timestamp' } }).catch(() => {});
+    if (!solo) tpost(TG('events/' + CODE), 'POST', { t: 'h', f: b.o, to: ME, d, b: b.id || '', ts: { '.sv': 'timestamp' } }).catch(() => {});
     else { const bt = BOTS.find(x => x.id === b.o); if (bt) { bt.g += 100; if (d) bt.k++; } }
     if (d) die(); else toast('🛡️ Giáp đỡ 1 phát! Giáp hạ còn ' + me.armor + ' cấp.'); save();
   }
@@ -311,44 +402,88 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     me.gold -= COST; if (k === 'a') me.armor++; else me.gun++; Snd.power(); toast(k === 'a' ? '🛡️ Nâng giáp thành công!' : '🔫 Nâng súng thành công!', true); save();
   }
   $('#bA').onclick = () => buy('a'); $('#bG').onclick = () => buy('g');
-  function save() {
-    lastSave = performance.now(); if (phase !== 'play' && phase !== 'end') return;
-    fb(TG('players/' + CODE + '/' + ME), 'PATCH', { x: Math.round(me.x), y: Math.round(me.y), a: +me.a.toFixed(2), b: +me.b.toFixed(2), ar: me.armor, gu: me.gun, g: me.gold, gt: me.gt, k: me.k, d: me.d, al: me.alive ? 1 : 0 }).catch(() => {});
+  /* Ghi hồ sơ lên máy chủ: mỗi lúc chỉ MỘT yêu cầu bay, trong lúc chờ chỉ nhớ trạng thái mới nhất rồi gửi tiếp.
+     → mạng chậm không bị dồn hàng chục yêu cầu, không bị ghi đè lỗi thời (yêu cầu cũ tới sau yêu cầu mới).
+     Gửi kèm t (giờ máy chủ), vx, vy để máy khác nội suy vị trí đúng thời điểm thay vì đoán theo nhịp hỏi. */
+  const SV = { busy: false, dirty: false, sig: '', at: 0, fail: 0 };
+  function saveBody() {
+    const k = spdAt(me.x), vx = me.alive ? Math.round((me.vx || 0) * k) : 0, vy = me.alive ? Math.round((me.vy || 0) * k) : 0;
+    return { x: Math.round(me.x), y: Math.round(me.y), a: +me.a.toFixed(2), b: +me.b.toFixed(2), vx: Math.abs(vx) < 8 ? 0 : vx, vy: Math.abs(vy) < 8 ? 0 : vy, t: Math.round(now()), ar: me.armor, gu: me.gun, g: me.gold, gt: me.gt, k: me.k, d: me.d, al: me.alive ? 1 : 0 };
   }
+  function save() { lastSave = performance.now(); if (phase !== 'play' && phase !== 'end') return; SV.dirty = true; pumpSave(); }
+  async function pumpSave() {
+    if (SV.busy || !SV.dirty) return; SV.busy = true; SV.dirty = false;
+    try { await tfb(TG('players/' + CODE + '/' + ME), 'PATCH', saveBody(), { to: 6000 }); SV.fail = 0; } catch (_) { SV.dirty = true; SV.fail++; }
+    SV.busy = false; if (SV.dirty) setTimeout(pumpSave, SV.fail ? Math.min(3000, 300 * SV.fail) : 0);
+  }
+  const saveSig = () => [Math.round(me.x / 2), Math.round(me.y / 2), me.a * 20 | 0, me.b * 8 | 0, (me.vx || 0) / 12 | 0, (me.vy || 0) / 12 | 0, me.armor, me.gun, me.gold, me.k, me.d, me.alive ? 1 : 0].join();
 
   /* ---------- Vòng cập nhật máy chủ ---------- */
-  let ticking = false;
+  let ticking = false, tickingE = false, miss = 0;
   async function tick() {
     if (ticking) return; ticking = true;
     try {
-      const [s, p, ev] = await Promise.all([fb(TG('sessions/' + CODE)), fb(TG('players/' + CODE)), solo ? {} : fbEv(lastKey)]);
+      /* chế độ 1 người chỉ cần hồ sơ của chính mình (không tải cả danh sách lớp mỗi 4 giây) */
+      const [s, p] = await Promise.all([tfb(TG('sessions/' + CODE)), solo ? tfb(TG('players/' + CODE + '/' + ME)).then(v => v ? { [ME]: v } : null) : tfb(TG('players/' + CODE))]);
       if (!s) { ticking = false; return gone('Phòng đã bị xoá.'); }
-      S = s; PL = p || {}; if (!PL[ME]) { ticking = false; return gone('Em đã bị thầy/cô mời ra khỏi phòng.'); }
-      Object.keys(ev).sort().forEach(k => { if (seen.has(k)) return; seen.add(k); lastKey = k; onEv(ev[k]); });
-      Object.keys(PL).forEach(id => { if (id === ME || !PL[id] || !PL[id].name) return; const r = PL[id], t = TK[id] = TK[id] || { id, x: r.x || 0, y: r.y || 0, b: 0, a: 0 }; const nx = r.x || 0, ny = r.y || 0, tn = performance.now(); if (nx !== t.tx0 || ny !== t.ty0) { const sec = (tn - (t.pt || 0)) / 1000; if (t.pt && sec > .1 && sec < 1.5) { t.vx = (nx - t.tx0) / sec; t.vy = (ny - t.ty0) / sec; } else t.vx = t.vy = 0; t.tx0 = nx; t.ty0 = ny; t.tx = nx; t.ty = ny; t.pt = tn; if (!t.init) { t.x = nx; t.y = ny; t.init = 1; } }
-        Object.assign(t, { name: r.name, av: r.av, team: r.team == null ? -1 : r.team, armor: r.ar | 0, gun: r.gu | 0, alive: !!r.al, ta: r.a || 0, tb: r.b || 0 }); });
-      Object.keys(TK).forEach(id => { if (!PL[id]) delete TK[id]; });
+      S = s; PL = p || {};
+      if (!PL[ME]) { if (++miss >= 2) { ticking = false; return gone('Em đã bị thầy/cô mời ra khỏi phòng.'); } } else miss = 0;
+      readPlayers();
       if (S.status === 'ended' && phase !== 'end') finish(); else if (!solo && (phase === 'wait' || phase === 'join')) route();
     } catch (_) {}
     ticking = false;
   }
-  function onEv(e) {
+  /* Sự kiện bắn / trúng đạn: hỏi riêng, nhanh hơn (0,35 s) vì mỗi lần chỉ tải về vài trăm byte */
+  async function tickE() {
+    if (tickingE || (phase !== 'play' && phase !== 'count')) return; tickingE = true;
+    try { const ev = await fbEv(lastKey); Object.keys(ev).sort().forEach(k => { if (seen.has(k)) return; seen.add(k); lastKey = k; onEv(ev[k], k); }); } catch (_) {}
+    tickingE = false;
+  }
+  /* Vị trí người khác: mỗi mẫu có giờ máy chủ (t) + vận tốc → đoán vị trí HIỆN TẠI = mẫu + vận tốc × tuổi mẫu (không phụ thuộc nhịp hỏi) */
+  function readPlayers() {
+    const pn = performance.now();
+    Object.keys(PL).forEach(id => {
+      if (id === ME || !PL[id] || !PL[id].name) return; const r = PL[id], nx = +r.x || 0, ny = +r.y || 0, st = +r.t || 0;
+      const t = TK[id] = TK[id] || { id, x: nx, y: ny, b: +r.b || 0, a: +r.a || 0, st: 0, sx: nx, sy: ny, svx: 0, svy: 0, lr: pn, init: 0, alive: false };
+      const fresh = st ? st > t.st : (nx !== t.sx || ny !== t.sy);
+      if (fresh) { t.st = st || now(); t.sx = nx; t.sy = ny; t.svx = +r.vx || 0; t.svy = +r.vy || 0; t.lr = pn; }
+      const al = !!r.al;
+      if (!t.init || (al && !t.alive) || Math.hypot(t.sx - t.x, t.sy - t.y) > 450) { t.x = t.sx; t.y = t.sy; t.init = 1; }
+      Object.assign(t, { name: r.name, av: r.av, team: r.team == null ? -1 : r.team, armor: r.ar | 0, gun: r.gu | 0, alive: al, ta: +r.a || 0, tb: +r.b || 0 });
+    });
+    Object.keys(TK).forEach(id => { if (!PL[id]) delete TK[id]; });
+  }
+  function predict(k) {
+    const since = (performance.now() - k.lr) / 1000, age = cl((now() - k.st) / 1000, since, since + .8);   /* tuổi mẫu: không nhỏ hơn thời gian đã nhận, không quá +0,8 s vì lệch đồng hồ */
+    let x = k.sx, y = k.sy;
+    if (k.alive && (k.svx || k.svy)) { const ag = Math.min(1.2, age), n = Math.max(1, Math.ceil(ag / .1)), dx = k.svx * ag / n, dy = k.svy * ag / n; for (let i = 0; i < n; i++) { if (!blocked(x + dx, y, R)) x += dx; if (!blocked(x, y + dy, R)) y += dy; } }
+    return [x, y];
+  }
+  const credited = new Set();
+  function onEv(e, key) {
     if (!e) return;
-    if (e.t === 'f' && e.f !== ME) mkBullet(e.f, e.tm, e.x, e.y, e.a, e.L, cl((now() - e.ts) / 1000, 0, .8));
+    if (e.t === 'f' && e.f !== ME) remoteFire(e, key);
     else if (e.t === 'h') {
-      const v = e.to === ME ? me : TK[e.to]; if (v) fx(v.x, v.y);
-      if (e.f === ME) { me.gold += 100; me.gt += 100; if (e.d) { me.k++; toast('💥 Em hạ gục ' + ((PL[e.to] || {}).name || 'đối thủ') + '!', true); } FX.push({ x: v ? v.x : me.x, y: (v ? v.y : me.y) - 30, t: 0, tx: '+100' }); Snd.step(); save(); }
+      if (e.to !== ME) { const v = TK[e.to]; if (v) fx(v.x, v.y); }
+      if (e.f === ME) {   /* điểm cho người bắn: mỗi phát chỉ tính một lần dù sự kiện bị gửi trùng */
+        const cid = e.b || key; if (credited.has(cid)) return; credited.add(cid);
+        const v = e.to === ME ? me : TK[e.to];
+        me.gold += 100; me.gt += 100; if (e.d) { me.k++; toast('💥 Em hạ gục ' + ((PL[e.to] || {}).name || 'đối thủ') + '!', true); } FX.push({ x: v ? v.x : me.x, y: (v ? v.y : me.y) - 30, t: 0, tx: '+100' }); Snd.step(); save();
+      }
     }
   }
-  function gone(m) { clearInterval(TI); LS('tankGame', null); phase = 'end'; cv.style.display = 'none'; app.style.display = ''; close_(); app.innerHTML = `<div class="entry"><main class="ecard"><div class="ebadge">🚧</div><h2>${esc(m)}</h2><button class="ego" onclick="location.href='../../index.html'">Về trang nhập mã</button></main></div>`; }
+  function gone(m) { clearInterval(TI); clearInterval(TE); LS('tankGame', null); phase = 'end'; cv.style.display = 'none'; app.style.display = ''; close_(); app.innerHTML = `<div class="entry"><main class="ecard"><div class="ebadge">🚧</div><h2>${esc(m)}</h2><button class="ego" onclick="location.href='../../index.html'">Về trang nhập mã</button></main></div>`; }
 
   /* ---------- Cập nhật mỗi khung hình ---------- */
   function update(dt) {
     const t = now(); if (t >= END || (S && S.status === 'ended')) return finish();
     if (me.alive) {
-      let dx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0), dy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
+      let dx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0), dy = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0), spd = 1;
+      const j = TCH.joy;
+      if (j) { const jx = (j.x - j.ox) / 60, jy = (j.y - j.oy) / 60, jm = Math.hypot(jx, jy); if (jm > .2) { dx = jx; dy = jy; spd = Math.min(1, jm); } }   /* cần lái cảm ứng (analog) */
+      else if (mouse.r && !dx && !dy) { const ddx = mouse.x - (me.x - cx), ddy = mouse.y - (me.y - cy); if (Math.hypot(ddx, ddy) > 36) { dx = ddx; dy = ddy; } }   /* chuột phải: đi tới con trỏ */
       const l = Math.hypot(dx, dy) || 1, k = 1 - Math.exp(-dt * (dx || dy ? 9 : 12));   /* tăng/giảm tốc mượt, không đổi hướng đột ngột */
-      me.vx = (me.vx || 0) + (dx / l * 190 - (me.vx || 0)) * k; me.vy = (me.vy || 0) + (dy / l * 190 - (me.vy || 0)) * k;
+      me.vx = (me.vx || 0) + (dx / l * 190 * spd - (me.vx || 0)) * k; me.vy = (me.vy || 0) + (dy / l * 190 * spd - (me.vy || 0)) * k;
       if (Math.hypot(me.vx, me.vy) > 8) { me.b = turn(me.b, Math.atan2(me.vy, me.vx), dt * 9); move(me, me.vx, me.vy, dt); }
       me.a = Math.atan2(mouse.y - (me.y - cy), mouse.x - (me.x - cx));
       if (mouse.d && t >= nextShot && shopAt(me.x, me.y) < 0) { nextShot = t + 650; fire(Object.assign(me, { id: ME }), true); }
@@ -357,19 +492,21 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     if (inShop) { const A = lv(me.armor), G = lv(me.gun); $('#bA').innerHTML = A >= 3 ? `🛡️ ${ARM[3].n} (3/3)<small>Đã tối đa</small>` : `🛡️ Nâng giáp [1] (${A}/3)<small>${COST} vàng · lên ${ARM[A + 1].n}</small>`; $('#bG').innerHTML = G >= 3 ? `🔫 ${GUN[3].n} (3/3)<small>Đã tối đa</small>` : `🔫 Nâng súng [2] (${G}/3)<small>${COST} vàng · lên ${GUN[G + 1].n} (xuyên ${G + 1} giáp)</small>`; }
     const all = solo ? BOTS : Object.values(TK);
     for (const k of Object.values(TK)) {
-      if (performance.now() - k.pt < 900) { const nx = k.tx + (k.vx || 0) * dt, ny = k.ty + (k.vy || 0) * dt; if (!blocked(nx, k.ty, R)) k.tx = nx; if (!blocked(k.tx, ny, R)) k.ty = ny; }
-      const f = 1 - Math.exp(-dt * 10); k.x += (k.tx - k.x) * f; k.y += (k.ty - k.y) * f; k.a = turn(k.a, k.ta, dt * 14); k.b = turn(k.b, k.tb, dt * 14);
+      const [px, py] = predict(k), f = 1 - Math.exp(-dt * 10); k.x += (px - k.x) * f; k.y += (py - k.y) * f; k.a = turn(k.a, k.ta, dt * 14); k.b = turn(k.b, k.tb, dt * 14);
     }
+    /* lịch sử vị trí của mình (3 s) để đối chiếu đạn tới trễ — xem checkHit */
+    if (!HIST.length || t - HIST[HIST.length - 1].t >= 30) { HIST.push({ t, x: me.x, y: me.y, ok: me.alive && shopAt(me.x, me.y) < 0 && t > me.inv }); while (HIST.length && HIST[0].t < t - 3000) HIST.shift(); }
     BOTS.forEach(b => botAI(b, dt, t));
     for (let i = BU.length - 1; i >= 0; i--) {
       const b = BU[i]; b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt; let dead = b.life <= 0 || blocked(b.x, b.y, 2);
       if (dead && b.life > 0) fx(b.x, b.y);
-      if (!dead && b.o !== ME && me.alive && !sameTeam(b.tm, me.team) && shopAt(me.x, me.y) < 0 && t > me.inv && !paused && Math.hypot(b.x - me.x, b.y - me.y) < R + 3) { hitMe(b); dead = true; }
+      if (!dead && b.o !== ME && !sameTeam(b.tm, me.team) && !paused && checkHit(b.x, b.y, t)) { hitMe(b); dead = true; }
       if (!dead && b.o === ME) for (const k of all) if (k.alive && !sameTeam(k.team, me.team) && shopAt(k.x, k.y) < 0 && Math.hypot(b.x - k.x, b.y - k.y) < R + 3) { if (k.bot) hitBot(k, b); else fx(k.x, k.y); dead = true; break; }
       if (dead) BU.splice(i, 1);
     }
     FX.forEach(f => f.t += dt); FX = FX.filter(f => f.t < 1);
-    if (performance.now() - lastSave > (solo ? 3000 : 300)) save();
+    const pn = performance.now();
+    if (pn - lastSave > (solo ? 3000 : 300)) { if (solo) save(); else { lastSave = pn; const sg = saveSig(); if (sg !== SV.sig || pn - SV.at > 4000) { SV.sig = sg; SV.at = pn; save(); } } }   /* đứng yên thì không ghi liên tục (nhịp tim 4 s) */
     if (performance.now() - lastHud > 250) { lastHud = performance.now(); hud(); vehCard(); }
   }
   function botAI(b, dt, t) {
@@ -434,8 +571,13 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     BU.forEach(b => { const L = lv(b.L); c.fillStyle = ['#fde047', '#fbbf24', '#fb923c', '#f87171'][L]; c.shadowColor = ['#f59e0b', '#f59e0b', '#ea580c', '#dc2626'][L]; c.shadowBlur = 8 + L * 2; c.beginPath(); c.arc(b.x - cx, b.y - cy, 4 + L * .9, 0, 7); c.fill(); c.shadowBlur = 0; });
     FX.forEach(f => { if (f.tx) { c.font = '900 22px "Be Vietnam Pro",sans-serif'; c.fillStyle = '#fde047'; c.globalAlpha = 1 - f.t; c.textAlign = 'center'; c.fillText(f.tx, f.x - cx, f.y - cy - f.t * 40); c.globalAlpha = 1; } else { c.fillStyle = `rgba(255,${160 - f.t * 100 | 0},40,${1 - f.t})`; c.beginPath(); c.arc(f.x - cx, f.y - cy, 8 + f.t * 34, 0, 7); c.fill(); } });
     if (!me.alive) { c.fillStyle = '#0006'; c.fillRect(0, 0, cw, ch); }
+    const j = TCH.joy; if (j) {   /* cần lái ảo */
+      const dx = j.x - j.ox, dy = j.y - j.oy, m = Math.min(1, Math.hypot(dx, dy) / 60), an = Math.atan2(dy, dx);
+      c.globalAlpha = .45; c.fillStyle = '#fff'; c.beginPath(); c.arc(j.ox, j.oy, 60, 0, 7); c.fill(); c.globalAlpha = .8; c.fillStyle = '#fde047'; c.beginPath(); c.arc(j.ox + Math.cos(an) * m * 60, j.oy + Math.sin(an) * m * 60, 26, 0, 7); c.fill(); c.globalAlpha = 1;
+    }
   }
-  function loop(ts) { if (phase !== 'play') return; const dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts; lastDt = dt; if (!paused) update(dt); if (phase === 'play') { draw(); requestAnimationFrame(loop); } }
+  /* một khung hình lỗi (vd. dữ liệu lạ của bạn khác) không được làm đứng cả trận: bắt lỗi rồi vẫn chạy khung kế tiếp */
+  function loop(ts) { if (phase !== 'play') return; const dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts; lastDt = dt; try { if (!paused) update(dt); if (phase === 'play') draw(); } catch (err) { try { console.error(err); (window.__errs = window.__errs || []).push(String(err && err.message)); } catch (_) {} } if (phase === 'play') requestAnimationFrame(loop); }
 
   /* ---------- HUD & xếp hạng ---------- */
   function board() {
@@ -446,7 +588,7 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
   }
   function hud() {
     const left = Math.max(0, END - now()), m = Math.floor(left / 60000), s = Math.floor(left % 60000 / 1000);
-    const hl = `<span class="pl">💰 ${me.gold}</span><span class="pl">🛡️ ${lv(me.armor)}/3</span><span class="pl">🔫 ${lv(me.gun)}/3</span><span class="pl">${MAPS[MAP].ic} ${MAPS[MAP].n}</span><span class="pl">💥 ${me.k}</span><span class="pl">⏱️ ${m}:${String(s).padStart(2, '0')}</span>`;
+    const hl = `<span class="pl">💰 ${me.gold}</span><span class="pl">🛡️ ${lv(me.armor)}/3</span><span class="pl">🔫 ${lv(me.gun)}/3</span><span class="pl">${MAPS[MAP].ic} ${MAPS[MAP].n}</span><span class="pl">💥 ${me.k}</span><span class="pl">⏱️ ${m}:${String(s).padStart(2, '0')}</span>${(() => { const rt = Math.round(NETQ.rtt); return rt ? `<span class="pl" style="${rt > 800 ? 'background:#b91c1cdd' : rt > 400 ? 'background:#b45309dd' : ''}">📶 ${rt}ms${rt > 800 ? ' · mạng chậm' : ''}</span>` : ''; })()}`;
     if (hl !== hud.hl) { hud.hl = hl; $('#hl').innerHTML = hl; }
     const hr = '<b style="display:block;margin-bottom:4px">🏆 Xếp hạng</b>' + board().slice(0, 6).map((r, i) => `<div class="${r.me ? 'me' : ''}"><span>${['🥇', '🥈', '🥉'][i] || i + 1}</span>${avOf(r.av)} ${r.team >= 0 ? `<i style="color:${TC[r.team % 6]}">●</i>` : ''}<span>${esc(r.name)}</span><b>💥${r.k} · 💰${r.g}</b></div>`)  .join('');
     if (hr !== hud.hr) { hud.hr = hr; $('#hr').innerHTML = hr; }
@@ -454,9 +596,10 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
 
   /* ---------- Kết thúc ---------- */
   async function finish() {
-    if (phase === 'end') return; phase = 'end'; clearInterval(TI); close_(); Snd.music(false); Snd.win(); paused = false; me.alive = false; save();
+    if (phase === 'end') return; phase = 'end'; clearInterval(TI); clearInterval(TE); close_(); Snd.music(false); Snd.win(); paused = false; me.alive = false; save();
     cv.style.display = 'none'; ['hl', 'hr', 'shop', 'veh'].forEach(i => $('#' + i).style.display = 'none'); $('#ovZ').style.display = 'none'; app.style.display = '';
-    try { PL = (await fb(TG('players/' + CODE))) || PL; } catch (_) {} if (!solo) PL[ME] = Object.assign({}, PL[ME], { g: me.gold, gt: me.gt, k: me.k });
+    for (let i = 0; i < 30 && (SV.busy || SV.dirty); i++) await sleep(100);   /* chờ lần ghi cuối của mình tới nơi để bảng xếp hạng đúng */
+    if (!solo) { try { PL = (await tfb(TG('players/' + CODE), 'GET', undefined, { to: 8000 })) || PL; } catch (_) {} } if (!solo) PL[ME] = Object.assign({}, PL[ME], { g: me.gold, gt: me.gt, k: me.k });
     const L = board(), rk = L.findIndex(r => r.me) + 1;
     app.innerHTML = `<div class="entry"><main class="ecard wide" style="text-align:left"><div class="ebadge">🏁</div><h2 style="text-align:center">Hết giờ! Em xếp hạng ${rk <= 3 ? ['🥇', '🥈', '🥉'][rk - 1] : '#' + rk}</h2>
       <p class="hint" style="text-align:center">💰 ${me.gold} vàng · 💥 ${me.k} lần hạ đối phương · ☠️ ${me.d} lần bị bắn hạ</p>
@@ -472,11 +615,11 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
       const sv = LS('tankGame');
       if (sv && sv.code === CODE && sv.rt) {
         RT = sv.rt; ME = sv.id; await fbRefresh(); ME = sv.id;
-        const [s, m] = await Promise.all([fb(TG('sessions/' + CODE)), fb(TG('players/' + CODE + '/' + ME))]);
+        const [s, m] = await Promise.all([tget(TG('sessions/' + CODE)), tget(TG('players/' + CODE + '/' + ME))]);
         if (s && m && m.name && s.status !== 'ended') { S = s; return await enter(false); }
       }
-      await fbAuth(); S = await fb(TG('sessions/' + CODE)); if (!S) return location.replace('../../index.html?code=' + CODE + '&re=1');
-      if (S.status === 'ended') return gone('Trận này đã kết thúc.'); PL = (await fb(TG('players/' + CODE))) || {}; showEntry();
+      await fbAuth(); const [s0, p0] = await Promise.all([tget(TG('sessions/' + CODE)), tget(TG('players/' + CODE))]); S = s0; if (!S) return location.replace('../../index.html?code=' + CODE + '&re=1');
+      if (S.status === 'ended') return gone('Trận này đã kết thúc.'); PL = p0 || {}; showEntry();
     } catch (e) { showEntry(e.message); }
   })();
 })();

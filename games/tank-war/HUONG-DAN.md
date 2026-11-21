@@ -12,6 +12,13 @@ Xe tăng nhìn từ trên xuống, dùng chung thư viện câu hỏi của hub.
 ## Quản lý người chơi (kick)
 Ở phòng điều khiển có khung **👥 Người tham gia** liệt kê mọi bạn đã vào phòng (theo thứ tự vào). Bấm dấu **✕** cạnh tên để loại bạn đặt tên không phù hợp hoặc gian lận: bạn đó bị đẩy ra ngay (thấy thông báo "bị mời ra khỏi phòng"), bị ghi vào `tank/kicked/<mã>/<uid>` nên không thể vào lại hay ghi dữ liệu nữa. **Cần dán lại Rules** (xem dưới) vì có thêm nhánh `kicked`. Trang xem báo cáo (`rep`) không có nút này.
 
+## Điều khiển & mạng chậm (v1.4)
+- Lái: WASD hoặc ←↑↓→ (nhận theo vị trí phím nên vẫn chạy khi bật Unikey/EVKey, bàn phím AZERTY); giữ chuột phải = đi tới con trỏ; điện thoại/máy tính bảng: kéo ngón tay nửa trái để lái, chạm giữ nửa phải để ngắm và bắn.
+- Sát thương do máy bị bắn tính: khi nhận sự kiện bắn trễ, máy bay lại đường đạn theo lịch sử vị trí của mình (có bù ~0,4 s độ trễ hiển thị) nên người bắn thấy trúng thì đa số được tính. Mỗi phát có mã id để không bị tính trùng khi mạng buộc gửi lại.
+- Mọi yêu cầu mạng có thời hạn chờ và tự thử lại; ghi vị trí chỉ 1 yêu cầu tại một thời điểm; góc màn hình hiện ping (cam >400 ms, đỏ >800 ms).
+- Không cần đổi Rules so với v1.3.
+- Kiểm thử: `SCEN=move,combat,chase,join,sync,net LAT=300 JIT=200 LOSS=0.03 node tools/loadtest/tank-test.js`
+
 ## Giảm giật lắc
 Phòng chờ chỉ cập nhật danh sách khi có người vào/ra (không vẽ lại cả khung nữa), bỏ hiệu ứng nảy ở huy hiệu, bảng xếp hạng trong trận có chiều rộng cố định và chỉ vẽ lại khi số liệu đổi.
 
