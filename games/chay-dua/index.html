@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head><script src="../../quota.js"></script>
+<head><script src="../../quota.js"></script><script src="../../howto.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Chạy đua</title>
@@ -151,7 +151,7 @@
     if (started || fin) return;
     const L = rankPlayers(PL);
     if (!$('#wait')) { app.innerHTML = '<div class="entry"><main class="ecard wide" id="wait"></main></div>'; close_(); }
-    $('#wait').innerHTML = `<div class="ebadge">⏳</div><h2>Đang chờ xuất phát…</h2>
+    $('#wait').innerHTML = `<div class="ebadge">⏳</div><h2>Đang chờ xuất phát…</h2>${window.HowTo?HowTo.block('chay-dua',CODE):''}
       <p class="hint">Đường đua dài <b>${NQ}</b> bước. Thầy/cô bấm <b>Bắt đầu</b> là cả lớp chạy cùng lúc!</p>
       <div class="plist">${L.map(r => `<span class="pc${r.id === ME ? ' me' : ''}">${avOf(r.av)} ${esc(r.name)}</span>`).join('')}</div>
       <p class="hint">${L.length} người đã vào phòng</p>`;

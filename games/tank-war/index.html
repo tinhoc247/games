@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head><script src="../../quota.js"></script><script src="../../vk.js"></script>
+<head><script src="../../quota.js"></script><script src="../../howto.js"></script><script src="../../vk.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tank War</title>
@@ -282,7 +282,7 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     const L = Object.values(PL).filter(v => v && v.name);
     if (phase !== 'wait' || !$('#plw')) {
       phase = 'wait'; waitKey = null;
-      app.innerHTML = `<div class="entry"><main class="ecard wide"><div class="ebadge">⏳</div><h2>Đang chờ xuất phát…</h2>
+      app.innerHTML = `<div class="entry"><main class="ecard wide"><div class="ebadge">⏳</div><h2>Đang chờ xuất phát…</h2>${window.HowTo?HowTo.block('tank-war',CODE):''}
       <p class="hint">Thầy/cô bấm <b>Bắt đầu</b> là cả lớp vào trận! ${mapLabel() ? 'Chiến trường: <b>' + mapLabel() + '</b> · ' : ''}Thời gian: <b>${+S.dur || 10} phút</b>${+S.teams > 0 ? ' · chia ' + S.teams + ' đội' : ''}</p>
       <p class="hint" id="plc"></p><div class="plist" id="plw"></div></main></div>`;
     }

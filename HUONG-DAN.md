@@ -27,6 +27,10 @@ games/
 
 Mã gần đây hiện ở cột phải, kèm trạng thái (đang chờ, đang chơi, đã kết thúc). Danh sách này lưu trên máy đang dùng.
 
+## Phòng chờ của học sinh (v1.5)
+
+Trong lúc chờ admin bấm **Bắt đầu**, màn hình học sinh của cả 5 game hiện **mã game** (bấm để chép) và mục **📖 Cách chơi** của đúng game đó (thu/mở được). Nội dung nằm trong `howto.js` (đối tượng `GUIDES`, mỗi game một mục); sửa luật ở đó là cập nhật cho mọi phòng chờ. Game mới: thêm 1 mục vào `GUIDES`, nạp `<script src="../../howto.js">` và chèn `${HowTo.block('id-game', CODE)}` vào HTML phòng chờ.
+
 ## Những điều cần biết
 
 - **Đăng nhập một lần**: mật khẩu được giữ trên trình duyệt (localStorage, hết hạn sau 12 giờ) nên mở phòng điều khiển ở tab mới vẫn tự đăng nhập. Nếu máy dùng chung, bấm "Đăng xuất" ở dashboard để xoá ngay. Nếu phải nhập lại mật khẩu ở trang admin của game, trang vẫn mở đúng phòng điều khiển của mã (`?ctl=MÃ`) chứ không nhảy về thư viện.

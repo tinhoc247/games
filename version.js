@@ -1,7 +1,8 @@
 /* Phiên bản hệ thống. Mỗi lần điều chỉnh / vá lỗi: tăng số ở HUB_VERSION và thêm 1 dòng lên ĐẦU HUB_CHANGELOG.
    Quy ước: sửa lỗi nhỏ → v1.1, v1.2…; thay đổi lớn → v2.0. */
-window.HUB_VERSION = '1.4';
+window.HUB_VERSION = '1.5';
 window.HUB_CHANGELOG = [
+  ['1.5', '25/11/2026', 'Phòng chờ của học sinh (cả 5 game): hiện to MÃ GAME (bấm để chép) và mục "📖 Cách chơi" riêng của từng game để đọc trong lúc chờ admin bấm Bắt đầu; mục này thu/mở được và nhớ trạng thái khi danh sách người chơi cập nhật. Thêm file howto.js dùng chung.'],
   ['1.4', '21/11/2026', 'Tank War: sửa lỗi không lái được khi mới vào (bộ gõ tiếng Việt, bàn phím khác QWERTY, thiết bị cảm ứng — thêm cần lái ảo, chuột phải để đi); sửa lỗi bắn trúng nhiều lần nhưng không tính (đạn tới trễ bị nhảy cóc qua xe); tối ưu mạng chậm: yêu cầu có thời hạn chờ và tự thử lại, ghi vị trí theo hàng đợi, nội suy theo vận tốc, hỏi sự kiện nhanh hơn, vào phòng nhanh hơn, hiện ping. Bảng xếp hạng và bảng "Xe của em" thu gọn thành biểu tượng nhỏ (bấm để mở) để không che màn chơi.'],
   ['1.3', '19/11/2026', 'Mỗi game có nhạc nền riêng: Chạy đua (sôi động), Tank War (hành khúc), Đội vàng (xylophone nhí nhảnh), Bảo vệ (hùng tráng), Kho báu (phiêu lưu hải tặc). Giảm âm lượng nhạc nền cho vừa phải.'],
   ['1.2', '19/11/2026', 'Màn hình vào phòng của Tank War và Chạy đua hiện tên bài (như các game khác) kèm loại game và mã.'],
