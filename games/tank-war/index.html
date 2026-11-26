@@ -60,11 +60,11 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
   const TG = p => 'tank/' + p, qs = new URLSearchParams(location.search);
   const CODE = String(qs.get('code') || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
   const W = 2600, HH = 1700, R = 22, SHOP = 210, COST = 1000, TC = ['#ef4444', '#3b82f6', '#eab308', '#a855f7', '#14b8a6', '#f97316'];
-  const app = $('#app'), cv = $('#cv'), c = cv.getContext('2d');
+  const app = $('#app'), cv = $('#cv'), c = cv.getContext('2d', { alpha: false });
   const LS = (k, v) => { try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (_) { return null; } };
   let S = null, PL = {}, RAW = [], VALID = [], OFF = 0, phase = 'join', joinAv = '', solo = false, END = 0, TI = null, lastKey = '', TE = null, seen = new Set(), TER = null, OB = [], MAP = 'mix', joinMap = 'mix', vehKey = '';
   let me = { x: 0, y: 0, b: 0, a: 0, armor: 0, gun: 0, gold: 0, gt: 0, k: 0, d: 0, alive: false, inv: 0, team: -1, name: '', av: '' };
-  let camInit = 0, lastDt = .016, BOTS = [], TK = {}, BU = [], FX = [], paused = false, nextShot = 0, mouse = { x: 0, y: 0, d: false, r: false }, keys = {}, cw = 0, ch = 0, cx = 0, cy = 0, lastSave = 0, lastHud = 0, last = 0;
+  let RS = 1, perfCool = 0, perfAcc = 0, perfN = 0, perfT = 0, shopKey = '', camInit = 0, lastDt = .016, BOTS = [], TK = {}, BU = [], FX = [], paused = false, nextShot = 0, mouse = { x: 0, y: 0, d: false, r: false }, keys = {}, cw = 0, ch = 0, cx = 0, cy = 0, lastSave = 0, lastHud = 0, last = 0;
   const turn = (a, t, k) => { let d = Math.atan2(Math.sin(t - a), Math.cos(t - a)); return a + d * Math.min(1, k); };
   const now = () => Date.now() + OFF, cl = (v, a, b) => Math.max(a, Math.min(b, v)), rnd = (a, b) => a + Math.random() * (b - a);
   const toast = (t, g) => { const d = document.createElement('div'); if (g) d.className = 'good'; d.textContent = t; $('#toast').appendChild(d); setTimeout(() => d.remove(), 3200); };
@@ -194,7 +194,7 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     else { g.fillStyle = o.sand ? '#a98a5a' : o.t ? '#6f6a62' : '#8b8b84'; g.beginPath(); g.arc(o.x, o.y, o.r, 0, 7); g.fill(); g.fillStyle = '#ffffff30'; g.beginPath(); g.arc(o.x - o.r * .3, o.y - o.r * .3, o.r * .5, 0, 7); g.fill(); }
   }
   function build(seed) {
-    const r = rng(seed || 1); OB = []; genOB(r);
+    const r = rng(seed || 1); OB = []; GRID = null; genOB(r); buildGrid();
     TER = document.createElement('canvas'); TER.width = W; TER.height = HH; const g = TER.getContext('2d'), rr = rng((seed || 1) + 7);
     paintGround(g, rr);
     OB.forEach(o => drawOb(g, o));
@@ -204,7 +204,24 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
       g.font = '56px serif'; g.textAlign = 'center'; g.fillText('🔧', p[0] + SHOP / 2, p[1] + SHOP / 2 + 4); g.font = '800 20px "Be Vietnam Pro",sans-serif'; g.fillStyle = '#fde047'; g.fillText('XƯỞNG', p[0] + SHOP / 2, p[1] + SHOP / 2 + 40);
     });
   }
-  const blocked = (x, y, rad) => { if (x < rad || y < rad || x > W - rad || y > HH - rad) return 1; for (const o of OB) { if (o.w) { const dx = x - cl(x, o.x, o.x + o.w), dy = y - cl(y, o.y, o.y + o.h); if (dx * dx + dy * dy < rad * rad) return 1; continue; } const dx = x - o.x, dy = y - o.y, rr = rad + o.r; if (dx * dx + dy * dy < rr * rr) return 1; } return 0; };
+  /* Lưới không gian: mỗi ô 128px chỉ chứa các vật cản chạm vào ô đó → blocked() chỉ xét vài vật cản gần thay vì cả 150–270 vật cản
+     (hàm này được gọi hàng nghìn lần mỗi khung hình: xe mình, mọi xe khác dự đoán, từng viên đạn, từng sự kiện bắn bay lại). */
+  const GC = 128; let GRID = null, GN = 0, GM = 0;
+  function buildGrid() {
+    GN = Math.ceil(W / GC); GM = Math.ceil(HH / GC); GRID = Array.from({ length: GN * GM }, () => []);
+    OB.forEach(o => {
+      const x0 = o.w ? o.x : o.x - o.r, x1 = o.w ? o.x + o.w : o.x + o.r, y0 = o.w ? o.y : o.y - o.r, y1 = o.w ? o.y + o.h : o.y + o.r;
+      for (let gx = Math.max(0, Math.floor(x0 / GC)); gx <= Math.min(GN - 1, Math.floor(x1 / GC)); gx++) for (let gy = Math.max(0, Math.floor(y0 / GC)); gy <= Math.min(GM - 1, Math.floor(y1 / GC)); gy++) GRID[gy * GN + gx].push(o);
+    });
+  }
+  const hitOb = (o, x, y, rad) => { if (o.w) { const dx = x - cl(x, o.x, o.x + o.w), dy = y - cl(y, o.y, o.y + o.h); return dx * dx + dy * dy < rad * rad; } const dx = x - o.x, dy = y - o.y, rr = rad + o.r; return dx * dx + dy * dy < rr * rr; };
+  const blocked = (x, y, rad) => {
+    if (x < rad || y < rad || x > W - rad || y > HH - rad) return 1;
+    if (!GRID) { for (const o of OB) if (hitOb(o, x, y, rad)) return 1; return 0; }   /* lúc đang sinh bản đồ (chưa có lưới) */
+    const gx0 = Math.max(0, (x - rad) / GC | 0), gx1 = Math.min(GN - 1, (x + rad) / GC | 0), gy0 = Math.max(0, (y - rad) / GC | 0), gy1 = Math.min(GM - 1, (y + rad) / GC | 0);
+    for (let gy = gy0; gy <= gy1; gy++) for (let gx = gx0; gx <= gx1; gx++) { const L = GRID[gy * GN + gx]; for (let i = 0; i < L.length; i++) if (hitOb(L[i], x, y, rad)) return 1; }
+    return 0;
+  };
   function spawnPos() { for (let i = 0; i < 200; i++) { const x = rnd(80, W - 80), y = rnd(80, HH - 80); if (shopAt(x, y) < 0 && shopAt(x + 60, y + 60) < 0 && shopAt(x - 60, y - 60) < 0 && !blocked(x, y, R + 14)) return [x, y]; } return [W / 2, HH / 2]; }
   function move(t, vx, vy, dt) { const k = spdAt(t.x), nx = t.x + vx * dt * k, ny = t.y + vy * dt * k; if (!blocked(nx, t.y, R)) t.x = nx; if (!blocked(t.x, ny, R)) t.y = ny; }
 
@@ -265,7 +282,7 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     if (!(m.t0 > 0)) hwCheck(S);   /* bạn đã vào trận từ trước vẫn được chơi nốt lượt của mình */
     Object.assign(me, { name: m.name, av: m.av, team: m.team == null ? -1 : m.team, gold: m.g | 0, gt: m.gt | 0, k: m.k | 0, d: m.d | 0, armor: m.ar | 0, gun: m.gu | 0, id: ME });
     Object.keys(e0 || {}).forEach(k => seen.add(k)); lastKey = Object.keys(e0 || {}).sort().pop() || '';
-    readPlayers(); clearInterval(TI); clearInterval(TE); TI = setInterval(tick, solo ? 4000 : 700); TE = solo ? null : setInterval(tickE, 350); tick();
+    readPlayers(); clearInterval(TI); clearInterval(TE); curPoll = 700; TI = setInterval(tick, solo ? 4000 : 700); TE = solo ? null : setInterval(tickE, 350); tick();
     if (solo) { if (m.t0 > 0) startPlay(m.t0, false); else { phase = 'count'; app.innerHTML = ''; raceCountdown(now(), OFF, $('#ovC'), $('#ovCn'), () => startPlay(now(), true)); } }
     else route();
   }
@@ -308,7 +325,7 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     Snd.start(); toast('💥 Vào trận! Chiến trường: ' + MAPS[MAP].ic + ' ' + MAPS[MAP].n + (isTouch ? '. Kéo ngón tay bên TRÁI để lái, chạm giữ bên PHẢI để ngắm và bắn.' : '. WASD/mũi tên để lái (hoặc giữ chuột phải), chuột trái để ngắm và bắn.') + ' Về xưởng ở 4 góc để nâng cấp.', true);
   }
   function spawn() { [me.x, me.y] = spawnPos(); me.alive = true; me.vx = me.vy = 0; me.inv = now() + 2500; save(); }
-  function resize() { cw = cv.width = innerWidth; ch = cv.height = innerHeight; }
+  function resize() { cw = innerWidth; ch = innerHeight; cv.width = Math.round(cw * RS); cv.height = Math.round(ch * RS); }   /* toạ độ vẽ vẫn tính theo px màn hình; RS<1 = vẽ ít điểm ảnh hơn rồi CSS phóng lên */
   addEventListener('resize', resize);
   /* Phím theo VỊ TRÍ vật lý (e.code), không theo chữ gõ ra: vẫn lái được khi bật bộ gõ tiếng Việt (Unikey/EVKey: key="Process" hoặc "ư/â/đ"),
      bàn phím AZERTY/Dvorak, hoặc khi đang bật Caps Lock. Nếu sự kiện không có e.code thì quy chữ có dấu về phím Telex tương ứng. */
@@ -426,17 +443,22 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
   const saveSig = () => [Math.round(me.x / 2), Math.round(me.y / 2), me.a * 20 | 0, me.b * 8 | 0, (me.vx || 0) / 12 | 0, (me.vy || 0) / 12 | 0, me.armor, me.gun, me.gold, me.k, me.d, me.alive ? 1 : 0].join();
 
   /* ---------- Vòng cập nhật máy chủ ---------- */
-  let ticking = false, tickingE = false, miss = 0;
+  let ticking = false, tickingE = false, miss = 0, lastS = 0, curPoll = 700;
   async function tick() {
     if (ticking) return; ticking = true;
     try {
       /* chế độ 1 người chỉ cần hồ sơ của chính mình (không tải cả danh sách lớp mỗi 4 giây) */
-      const [s, p] = await Promise.all([tfb(TG('sessions/' + CODE)), solo ? tfb(TG('players/' + CODE + '/' + ME)).then(v => v ? { [ME]: v } : null) : tfb(TG('players/' + CODE))]);
+      const needS = solo || phase !== 'play' || performance.now() - lastS > 2500;   /* đang chơi: trạng thái phòng (kết thúc sớm) chỉ cần hỏi ~2,5 s/lần */
+      const [s, p] = await Promise.all([needS ? tfb(TG('sessions/' + CODE)) : S, solo ? tfb(TG('players/' + CODE + '/' + ME)).then(v => v ? { [ME]: v } : null) : tfb(TG('players/' + CODE))]);
       if (!s) { ticking = false; return gone('Phòng đã bị xoá.'); }
+      if (needS) lastS = performance.now();
       S = s; PL = p || {};
       if (!PL[ME]) { if (++miss >= 2) { ticking = false; return gone('Em đã bị thầy/cô mời ra khỏi phòng.'); } } else miss = 0;
       readPlayers();
       if (S.status === 'ended' && phase !== 'end') finish(); else if (!solo && (phase === 'wait' || phase === 'join')) route();
+      /* Tải danh sách người chơi tăng theo bình phương số người (mỗi máy tải cả lớp): lớp càng đông, giãn nhịp hỏi ra (700 ms ≤ ~17 người → ~1,1 s ở 50 người).
+         Vị trí vẫn mượt vì có vận tốc + nội suy; sát thương không phụ thuộc nhịp này. */
+      if (!solo && phase === 'play') { const want = cl(500 + Object.keys(PL).length * 12, 700, 1300) + (NETQ.rtt > 500 ? 250 : 0); if (Math.abs(want - curPoll) > 100) { curPoll = want; clearInterval(TI); TI = setInterval(tick, want); } }
     } catch (_) {}
     ticking = false;
   }
@@ -460,10 +482,11 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     });
     Object.keys(TK).forEach(id => { if (!PL[id]) delete TK[id]; });
   }
-  function predict(k) {
+  function predict(k, far) {
     const since = (performance.now() - k.lr) / 1000, age = cl((now() - k.st) / 1000, since, since + .8);   /* tuổi mẫu: không nhỏ hơn thời gian đã nhận, không quá +0,8 s vì lệch đồng hồ */
     let x = k.sx, y = k.sy;
-    if (k.alive && (k.svx || k.svy)) { const ag = Math.min(1.2, age), n = Math.max(1, Math.ceil(ag / .1)), dx = k.svx * ag / n, dy = k.svy * ag / n; for (let i = 0; i < n; i++) { if (!blocked(x + dx, y, R)) x += dx; if (!blocked(x, y + dy, R)) y += dy; } }
+    if (k.alive && (k.svx || k.svy) && far) { const ag = Math.min(1.2, age); x += k.svx * ag; y += k.svy * ag; }
+    else if (k.alive && (k.svx || k.svy)) { const ag = Math.min(1.2, age), n = Math.max(1, Math.ceil(ag / .1)), dx = k.svx * ag / n, dy = k.svy * ag / n; for (let i = 0; i < n; i++) { if (!blocked(x + dx, y, R)) x += dx; if (!blocked(x, y + dy, R)) y += dy; } }
     return [x, y];
   }
   const credited = new Set();
@@ -495,11 +518,12 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
       me.a = Math.atan2(mouse.y - (me.y - cy), mouse.x - (me.x - cx));
       if (mouse.d && t >= nextShot && shopAt(me.x, me.y) < 0) { nextShot = t + 650; fire(Object.assign(me, { id: ME }), true); }
     }
-    const inShop = me.alive && shopAt(me.x, me.y) >= 0; $('#shop').style.display = inShop ? 'flex' : 'none';
-    if (inShop) { const A = lv(me.armor), G = lv(me.gun); $('#bA').innerHTML = A >= 3 ? `🛡️ ${ARM[3].n} (3/3)<small>Đã tối đa</small>` : `🛡️ Nâng giáp [1] (${A}/3)<small>${COST} vàng · lên ${ARM[A + 1].n}</small>`; $('#bG').innerHTML = G >= 3 ? `🔫 ${GUN[3].n} (3/3)<small>Đã tối đa</small>` : `🔫 Nâng súng [2] (${G}/3)<small>${COST} vàng · lên ${GUN[G + 1].n} (xuyên ${G + 1} giáp)</small>`; }
+    const inShop = me.alive && shopAt(me.x, me.y) >= 0, sk = inShop ? lv(me.armor) + ',' + lv(me.gun) : '';
+    if (sk !== shopKey) { shopKey = sk; $('#shop').style.display = inShop ? 'flex' : 'none';
+    if (inShop) { const A = lv(me.armor), G = lv(me.gun); $('#bA').innerHTML = A >= 3 ? `🛡️ ${ARM[3].n} (3/3)<small>Đã tối đa</small>` : `🛡️ Nâng giáp [1] (${A}/3)<small>${COST} vàng · lên ${ARM[A + 1].n}</small>`; $('#bG').innerHTML = G >= 3 ? `🔫 ${GUN[3].n} (3/3)<small>Đã tối đa</small>` : `🔫 Nâng súng [2] (${G}/3)<small>${COST} vàng · lên ${GUN[G + 1].n} (xuyên ${G + 1} giáp)</small>`; } }
     const all = solo ? BOTS : Object.values(TK);
     for (const k of Object.values(TK)) {
-      const [px, py] = predict(k), f = 1 - Math.exp(-dt * 10); k.x += (px - k.x) * f; k.y += (py - k.y) * f; k.a = turn(k.a, k.ta, dt * 14); k.b = turn(k.b, k.tb, dt * 14);
+      const far = k.x < cx - 350 || k.x > cx + cw + 350 || k.y < cy - 350 || k.y > cy + ch + 350, [px, py] = predict(k, far), f = 1 - Math.exp(-dt * 10); k.x += (px - k.x) * f; k.y += (py - k.y) * f; k.a = turn(k.a, k.ta, dt * 14); k.b = turn(k.b, k.tb, dt * 14);
     }
     /* lịch sử vị trí của mình (3 s) để đối chiếu đạn tới trễ — xem checkHit */
     if (!HIST.length || t - HIST[HIST.length - 1].t >= 30) { HIST.push({ t, x: me.x, y: me.y, ok: me.alive && shopAt(me.x, me.y) < 0 && t > me.inv }); while (HIST.length && HIST[0].t < t - 3000) HIST.shift(); }
@@ -529,10 +553,12 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
   /* Xe nhìn từ trên xuống. Cấp giáp: 1 = giáp hông, 2 = + giáp mũi & khối giáp phản ứng, 3 = + viền vàng & vòng giáp tháp pháo.
      Cấp súng: 0 = nòng đơn, 1 = nòng to + hãm lửa, 2 = nòng kép, 3 = nòng kép nặng + bệ tên lửa. Các vòng xanh quanh xe = số lớp giáp còn lại. */
   const shade = (hex, k) => { const n = parseInt(String(hex).slice(1), 16), f = v => Math.round(k < 0 ? v * (1 + k) : v + (255 - v) * k); return `rgb(${f(n >> 16)},${f(n >> 8 & 255)},${f(n & 255)})`; };
-  function body(g, t, col) {
-    const A = lv(t.armor), G = lv(t.gun);
+  /* Chia xe thành 3 phần (vòng giáp + thân, tháp pháo, ảnh đại diện) để vẽ một lần vào sprite rồi dán lại mỗi khung hình.
+     body() vẫn dùng cho bảng "Xe của em"; tankFast() dùng sprite cho trận đấu. */
+  function ringsPart(g, A) {
     for (let i = 0; i < A; i++) { g.strokeStyle = '#67e8f9'; g.lineWidth = 3; g.globalAlpha = .85; g.beginPath(); g.arc(0, 0, R + 5 + i * 5, 0, 7); g.stroke(); } g.globalAlpha = 1;
-    g.save(); g.rotate(t.b);
+  }
+  function hullPart(g, A, col) {
     g.fillStyle = '#1c1f1a'; g.fillRect(-26, -23, 52, 9); g.fillRect(-26, 14, 52, 9); g.fillStyle = '#4a5043'; for (let x = -24; x < 25; x += 5) { g.fillRect(x, -23, 2, 9); g.fillRect(x, 14, 2, 9); }
     g.fillStyle = col; g.fillRect(-22, -14, 44, 28); g.fillStyle = '#0003'; g.fillRect(-22, 6, 44, 8); g.fillStyle = '#ffffff24'; g.fillRect(-22, -14, 44, 4);
     g.fillStyle = '#0006'; for (let k = 0; k < 4; k++) g.fillRect(-21, -9 + k * 5, 9, 3);   /* lưới tản nhiệt phía sau */
@@ -540,7 +566,8 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     if (A >= 1) { g.fillStyle = '#94a3b8'; g.fillRect(-24, -26, 48, 4); g.fillRect(-24, 22, 48, 4); g.fillStyle = '#475569'; for (let x = -20; x <= 20; x += 10) { g.fillRect(x, -25, 2, 2); g.fillRect(x, 23, 2, 2); } }
     if (A >= 2) { g.fillStyle = '#cbd5e1'; g.beginPath(); g.moveTo(21, -14); g.lineTo(30, -9); g.lineTo(30, 9); g.lineTo(21, 14); g.closePath(); g.fill(); g.fillStyle = '#64748b'; for (let x = -14; x <= 14; x += 7) { g.fillRect(x, -12, 5, 4); g.fillRect(x, 8, 5, 4); } }
     if (A >= 3) { g.strokeStyle = '#fbbf24'; g.lineWidth = 2; g.strokeRect(-23, -15, 46, 30); g.fillStyle = '#e2e8f0'; g.fillRect(-24, -28, 48, 3); g.fillRect(-24, 25, 48, 3); }
-    g.rotate(t.a - t.b);
+  }
+  function turretPart(g, A, G, col) {
     if (G >= 3) { g.fillStyle = '#7f1d1d'; g.fillRect(-6, -19, 16, 6); g.fillRect(-6, 13, 16, 6); g.fillStyle = '#fde047'; g.fillRect(8, -18, 3, 4); g.fillRect(8, 14, 3, 4); }
     const bc = ['#4b5563', '#d97706', '#f97316', '#ef4444'][G];
     g.fillStyle = bc;
@@ -549,13 +576,36 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     else { g.fillRect(4, -5.5, G === 2 ? 36 : 38, 3.8); g.fillRect(4, 1.7, G === 2 ? 36 : 38, 3.8); g.fillStyle = G === 2 ? '#9a3412' : '#450a0a'; const e = G === 2 ? 36 : 38; g.fillRect(e - 3, -7, 5, 6.6); g.fillRect(e - 3, 0.4, 5, 6.6); if (G === 3) { g.fillStyle = '#fde047'; g.shadowColor = '#f97316'; g.shadowBlur = 8; g.fillRect(e + 2, -5, 2, 3); g.fillRect(e + 2, 2, 2, 3); g.shadowBlur = 0; } }
     g.fillStyle = shade(col, -.2); g.beginPath(); g.arc(0, 0, 15.5, 0, 7); g.fill();
     if (A >= 2) { g.strokeStyle = A >= 3 ? '#fbbf24' : '#cbd5e1'; g.lineWidth = A >= 3 ? 3 : 2; g.beginPath(); g.arc(0, 0, 15.5, 0, 7); g.stroke(); }
-    g.fillStyle = '#e5e7eb'; g.beginPath(); g.arc(0, 0, 14, 0, 7); g.fill(); g.save(); g.beginPath(); g.arc(0, 0, 11.5, 0, 7); g.clip(); g.rotate(-t.a); const im = avi(t.av); if (im.complete && im.naturalWidth) g.drawImage(im, -12, -12, 24, 24); g.restore();
+    g.fillStyle = '#e5e7eb'; g.beginPath(); g.arc(0, 0, 14, 0, 7); g.fill();   }
+  function body(g, t, col) {
+    const A = lv(t.armor), G = lv(t.gun);
+    ringsPart(g, A);
+    g.save(); g.rotate(t.b); hullPart(g, A, col);
+    g.rotate(t.a - t.b); turretPart(g, A, G, col);
+    g.save(); g.beginPath(); g.arc(0, 0, 11.5, 0, 7); g.clip(); g.rotate(-t.a); const im = avi(t.av); if (im.complete && im.naturalWidth) g.drawImage(im, -12, -12, 24, 24); g.restore();
     g.restore();
   }
+  /* ---------- Sprite: vẽ 1 lần, dán nhiều lần (nhanh hơn rất nhiều so với ~60 lệnh vẽ đường/xe/khung hình trên máy yếu) ---------- */
+  const SS = 2, SPR = new Map(), LBL = new Map(), AVC = {}, BSP = [], MC = document.createElement('canvas').getContext('2d');
+  function mkc(w, h) { const k = document.createElement('canvas'); k.width = w * SS; k.height = h * SS; const g = k.getContext('2d'); g.scale(SS, SS); return [k, g]; }
+  function spr(key, w, h, fn) { let k = SPR.get(key); if (!k) { const r = mkc(w, h); r[1].translate(w / 2, h / 2); fn(r[1]); k = r[0]; SPR.set(key, k); } return k; }
+  function avSpr(id) { const im = avi(id); if (!(im.complete && im.naturalWidth)) return null; let k = AVC[id]; if (!k) { const r = mkc(24, 24); r[1].beginPath(); r[1].arc(12, 12, 11.5, 0, 7); r[1].clip(); r[1].drawImage(im, 0, 0, 24, 24); k = AVC[id] = r[0]; } return k; }
+  function lbl(text, font, fill) {
+    const key = font + '|' + fill + '|' + (document.fonts && document.fonts.check && document.fonts.check(font) ? 1 : 0) + '|' + text; let e = LBL.get(key); if (e) return e;
+    MC.font = font; const w = Math.ceil(MC.measureText(text).width) + 10, r = mkc(w, 34), g = r[1]; g.font = font; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = '#000b'; g.fillStyle = fill; g.strokeText(text, w / 2, 24); g.fillText(text, w / 2, 24);
+    e = { k: r[0], w }; if (LBL.size > 300) LBL.delete(LBL.keys().next().value); LBL.set(key, e); return e;
+  }
+  function bulletSpr(L) {
+    if (!BSP[L]) { const r = 4 + L * .9, bl = 8 + L * 2, sz = Math.ceil((r + bl) * 2 + 4), q = mkc(sz, sz), g = q[1]; g.translate(sz / 2, sz / 2); g.fillStyle = ['#fde047', '#fbbf24', '#fb923c', '#f87171'][L]; g.shadowColor = ['#f59e0b', '#f59e0b', '#ea580c', '#dc2626'][L]; g.shadowBlur = bl * SS; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill(); BSP[L] = { k: q[0], sz }; }
+    return BSP[L];
+  }
   function tank(t, col, mine) {
-    c.save(); c.translate(t.x - cx, t.y - cy); body(c, t, col); c.restore();
-    const nx = t.x - cx, ny = t.y - cy - 36; c.font = '800 14px "Be Vietnam Pro",sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = '#000b'; c.fillStyle = mine ? '#fde047' : '#fff'; c.strokeText(t.name || '', nx, ny); c.fillText(t.name || '', nx, ny);
-    if (mine || lv(t.armor) || lv(t.gun)) { const tx = '🛡' + lv(t.armor) + '  🔫' + lv(t.gun); c.font = '800 12px "Be Vietnam Pro",sans-serif'; c.strokeText(tx, nx, ny - 16); c.fillStyle = '#a5f3fc'; c.fillText(tx, nx, ny - 16); }
+    const A = lv(t.armor), G = lv(t.gun), X = t.x - cx, Y = t.y - cy;
+    const hs = spr('h' + col + A, 84, 84, g => { ringsPart(g, A); hullPart(g, A, col); }), ts = spr('t' + col + A + G, 96, 96, g => turretPart(g, A, G, col));
+    c.save(); c.translate(X, Y); c.rotate(t.b); c.drawImage(hs, -42, -42, 84, 84); c.rotate(t.a - t.b); c.drawImage(ts, -48, -48, 96, 96); c.restore();
+    const av = avSpr(t.av); if (av) c.drawImage(av, X - 12, Y - 12, 24, 24);
+    const ny = Y - 36, n = lbl(t.name || '', '800 14px "Be Vietnam Pro",sans-serif', mine ? '#fde047' : '#fff'); c.drawImage(n.k, X - n.w / 2, ny - 24, n.w, 34);
+    if (mine || A || G) { const e = lbl('🛡' + A + '  🔫' + G, '800 12px "Be Vietnam Pro",sans-serif', '#a5f3fc'); c.drawImage(e.k, X - e.w / 2, ny - 16 - 24, e.w, 34); }
   }
   /* Bảng "Xe của em": hình xe + tên cấp giáp / vũ khí hiện có */
   function vehCard() {
@@ -570,13 +620,14 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
   }
   const AI = {}; function avi(id) { if (!AI[id]) { const i = new Image(); i.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(avH(id).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ')); AI[id] = i; } return AI[id]; }
   function draw() {
+    c.setTransform(RS, 0, 0, RS, 0, 0);
     const gx = cl(me.x - cw / 2, 0, Math.max(0, W - cw)), gy = cl(me.y - ch / 2, 0, Math.max(0, HH - ch)), kc = camInit ? 1 - Math.exp(-lastDt * 12) : 1; camInit = 1;
     cx = Math.round(cx + (gx - cx) * kc); cy = Math.round(cy + (gy - cy) * kc);
     c.fillStyle = '#143014'; c.fillRect(0, 0, cw, ch); c.drawImage(TER, cx, cy, Math.min(cw, W), Math.min(ch, HH), 0, 0, Math.min(cw, W), Math.min(ch, HH));
     const col = t => t.team >= 0 ? TC[t.team % 6] : t === me ? '#22c55e' : '#dc2626';
     (solo ? BOTS : Object.values(TK)).forEach(t => { if (t.alive && t.x > cx - 80 && t.x < cx + cw + 80 && t.y > cy - 80 && t.y < cy + ch + 80) tank(t, col(t), false); });
     if (me.alive) { if (now() < me.inv) c.globalAlpha = .55 + .25 * Math.sin(now() / 80); tank(me, col(me), true); c.globalAlpha = 1; }
-    BU.forEach(b => { const L = lv(b.L); c.fillStyle = ['#fde047', '#fbbf24', '#fb923c', '#f87171'][L]; c.shadowColor = ['#f59e0b', '#f59e0b', '#ea580c', '#dc2626'][L]; c.shadowBlur = 8 + L * 2; c.beginPath(); c.arc(b.x - cx, b.y - cy, 4 + L * .9, 0, 7); c.fill(); c.shadowBlur = 0; });
+    BU.forEach(b => { const x = b.x - cx, y = b.y - cy; if (x < -30 || y < -30 || x > cw + 30 || y > ch + 30) return; const q = bulletSpr(lv(b.L)); c.drawImage(q.k, x - q.sz / 2, y - q.sz / 2, q.sz, q.sz); });
     FX.forEach(f => { if (f.tx) { c.font = '900 22px "Be Vietnam Pro",sans-serif'; c.fillStyle = '#fde047'; c.globalAlpha = 1 - f.t; c.textAlign = 'center'; c.fillText(f.tx, f.x - cx, f.y - cy - f.t * 40); c.globalAlpha = 1; } else { c.fillStyle = `rgba(255,${160 - f.t * 100 | 0},40,${1 - f.t})`; c.beginPath(); c.arc(f.x - cx, f.y - cy, 8 + f.t * 34, 0, 7); c.fill(); } });
     if (!me.alive) { c.fillStyle = '#0006'; c.fillRect(0, 0, cw, ch); }
     const j = TCH.joy; if (j) {   /* cần lái ảo */
@@ -585,7 +636,15 @@ body{background:radial-gradient(circle at 30% 20%,#4d7a3a,#1d3318 70%)}
     }
   }
   /* một khung hình lỗi (vd. dữ liệu lạ của bạn khác) không được làm đứng cả trận: bắt lỗi rồi vẫn chạy khung kế tiếp */
-  function loop(ts) { if (phase !== 'play') return; const dt = Math.min(.05, (ts - last) / 1000 || 0); last = ts; lastDt = dt; try { if (!paused) update(dt); if (phase === 'play') draw(); } catch (err) { try { console.error(err); (window.__errs = window.__errs || []).push(String(err && err.message)); } catch (_) {} } if (phase === 'play') requestAnimationFrame(loop); }
+  /* Tự giảm chất lượng: chỉ khi máy thật sự yếu — 60 khung hình liền có thời gian TB > 40 ms (< 25 fps) — thì giảm độ phân giải canvas
+     (1 → .85 → .7 → .55) để mượt hơn; mỗi lần giảm đợi ~5 s rồi mới xét tiếp. Máy từ ~25 fps trở lên giữ nguyên độ nét. */
+  function perfStep(ms) {
+    if (!(ms > 0) || ms > 400) return; perfAcc += ms; perfT += ms * ms; perfN++;
+    if (perfN < 60) return; const avg = perfAcc / perfN; perfAcc = perfT = perfN = 0;
+    if (perfCool > 0) { perfCool--; return; }
+    if (avg > 40 && RS > .56) { RS = +(RS - .15).toFixed(2); perfCool = 2; resize(); }
+  }
+  function loop(ts) { if (phase !== 'play') return; const dt = Math.min(.05, (ts - last) / 1000 || 0); if (!paused) perfStep(ts - last); last = ts; lastDt = dt; try { if (!paused) update(dt); if (phase === 'play') draw(); } catch (err) { try { console.error(err); (window.__errs = window.__errs || []).push(String(err && err.message)); } catch (_) {} } if (phase === 'play') requestAnimationFrame(loop); }
 
   /* ---------- HUD & xếp hạng ---------- */
   function board() {
